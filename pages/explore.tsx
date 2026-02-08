@@ -32,6 +32,7 @@ export default function ExploreFreelancers() {
   const [freelancers, setFreelancers] = useState<Person[]>([])
   const [allCities, setAllCities] = useState<string[]>([])
   const [allSkills, setAllSkills] = useState<Skill[]>([])
+  const [allUniversities, setAllUniversities] = useState<Array<{ id: number; name: string; city: string }>>([])
   const [loading, setLoading] = useState(false)
   const [page, setPage] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
@@ -39,6 +40,7 @@ export default function ExploreFreelancers() {
 
   // Filters
   const [selectedCity, setSelectedCity] = useState<string>('')
+  const [selectedUniversityId, setSelectedUniversityId] = useState<string>('')
   const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([])
   const [filtersOpen, setFiltersOpen] = useState(false)
 
@@ -63,14 +65,14 @@ export default function ExploreFreelancers() {
 
   useEffect(() => {
     const init = async () => {
-      // Fetch all unique cities
-      const { data: citiesData } = await supabase
-        .from('profiles')
-        .select('city')
-        .not('city', 'is', null)
+      const { data: collegesData } = await supabase
+        .from('colleges')
+        .select('id, name, city')
+        .order('name')
 
-      if (citiesData) {
-        const uniqueCities = Array.from(new Set(citiesData.map((p: any) => p.city))).filter(Boolean)
+      if (collegesData) {
+        setAllUniversities(collegesData)
+        const uniqueCities = Array.from(new Set(collegesData.map((c: any) => c.city))).filter(Boolean)
         setAllCities(uniqueCities as string[])
       }
 
@@ -95,6 +97,7 @@ export default function ExploreFreelancers() {
       try {
         const params = new URLSearchParams()
         if (selectedCity) params.append('city', selectedCity)
+        if (selectedUniversityId) params.append('university_id', selectedUniversityId)
         if (selectedSkillIds.length > 0) {
           params.append('skills', selectedSkillIds.join(','))
         }
@@ -118,7 +121,7 @@ export default function ExploreFreelancers() {
     }
 
     fetchFreelancers()
-  }, [selectedCity, selectedSkillIds, page])
+  }, [selectedCity, selectedUniversityId, selectedSkillIds, page])
 
   const handleSkillToggle = (skillId: number) => {
     setSelectedSkillIds((prev) =>
@@ -129,8 +132,13 @@ export default function ExploreFreelancers() {
 
   const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedCity(e.target.value)
+    setSelectedUniversityId('')
     setPage(0) // Reset to first page
   }
+
+  const filteredUniversities = selectedCity
+    ? allUniversities.filter((u) => u.city === selectedCity)
+    : allUniversities
 
   const totalPages = Math.ceil(totalCount / LIMIT)
 
@@ -162,6 +170,28 @@ export default function ExploreFreelancers() {
                 {allCities.map((city) => (
                   <option key={city} value={city}>
                     {city}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="rn-field">
+            <label htmlFor="university">University</label>
+            <div className="rn-select-wrap">
+              <select
+                id="university"
+                value={selectedUniversityId}
+                onChange={(e) => {
+                  setSelectedUniversityId(e.target.value)
+                  setPage(0)
+                }}
+                disabled={!selectedCity}
+              >
+                <option value="">{selectedCity ? 'All universities' : 'Select a city first'}</option>
+                {filteredUniversities.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name}
                   </option>
                 ))}
               </select>

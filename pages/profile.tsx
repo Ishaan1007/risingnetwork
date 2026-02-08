@@ -9,7 +9,7 @@ type Profile = {
   first_name: string
   last_name: string
   city: string
-  role: 'student' | 'freelancer' | null
+  role: 'student' | 'freelancer' | 'teacher' | null
   bio: string
   linkedin_url?: string
   github_url?: string
@@ -43,6 +43,8 @@ export default function Profile() {
   const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([])
   const [collegeInfo, setCollegeInfo] = useState<CollegeInfo>({ college_id: null, major: '', graduation_year: null })
   const [universityQuery, setUniversityQuery] = useState('')
+  const [skillQuery, setSkillQuery] = useState('')
+  const [skillsOpen, setSkillsOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -346,6 +348,12 @@ export default function Profile() {
     return `${c.name} ${c.city}`.toLowerCase().includes(query)
   })
 
+  const filteredSkills = allSkills.filter((s) => {
+    const query = skillQuery.trim().toLowerCase()
+    if (!query) return true
+    return `${s.name} ${s.category || ''}`.toLowerCase().includes(query)
+  })
+
   return (
     <main className="rn-profile-shell">
       <div className="rn-profile-card">
@@ -414,6 +422,7 @@ export default function Profile() {
               <option value="">Select a role</option>
               <option value="student">Student</option>
               <option value="freelancer">Freelancer</option>
+              <option value="teacher">Teacher</option>
             </select>
           </div>
 
@@ -478,21 +487,57 @@ export default function Profile() {
 
           <div className="rn-form-field full">
             <label>Skills *</label>
-            <div className="rn-skill-grid">
-              {allSkills.map((skill) => (
-                <label
-                  key={skill.id}
-                  className={`rn-skill-chip ${selectedSkillIds.includes(skill.id) ? 'is-active' : ''}`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedSkillIds.includes(skill.id)}
-                    onChange={() => handleSkillToggle(skill.id)}
-                  />
-                  <span>{skill.name}</span>
-                </label>
-              ))}
+            <div className="rn-skill-select">
+              <input
+                className="rn-skill-search"
+                type="text"
+                placeholder="Search and select skills"
+                value={skillQuery}
+                onChange={(e) => {
+                  setSkillQuery(e.target.value)
+                  setSkillsOpen(true)
+                }}
+                onFocus={() => setSkillsOpen(true)}
+                onBlur={() => setTimeout(() => setSkillsOpen(false), 150)}
+              />
+
+              {skillsOpen && (
+                <div className="rn-skill-dropdown" role="listbox">
+                  {filteredSkills.length === 0 ? (
+                    <div className="rn-skill-empty">No skills found.</div>
+                  ) : (
+                    filteredSkills.map((skill) => {
+                      const checked = selectedSkillIds.includes(skill.id)
+                      return (
+                        <label key={skill.id} className={`rn-skill-option ${checked ? 'is-active' : ''}`}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => handleSkillToggle(skill.id)}
+                          />
+                          <span>
+                            {skill.name}
+                            {skill.category ? <em>{skill.category}</em> : null}
+                          </span>
+                        </label>
+                      )
+                    })
+                  )}
+                </div>
+              )}
             </div>
+
+            {selectedSkillIds.length > 0 && (
+              <div className="rn-skill-grid">
+                {allSkills
+                  .filter((skill) => selectedSkillIds.includes(skill.id))
+                  .map((skill) => (
+                    <span key={skill.id} className="rn-skill-chip is-active">
+                      {skill.name}
+                    </span>
+                  ))}
+              </div>
+            )}
           </div>
 
           <div className="rn-form-field full">
