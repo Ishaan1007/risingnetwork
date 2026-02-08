@@ -939,6 +939,7 @@ pre {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  width: 100%;
 }
 
 .rn-skill-search {
@@ -957,8 +958,10 @@ pre {
   background: #ffffff;
   max-height: 240px;
   overflow: auto;
+  overflow-x: hidden;
   box-shadow: var(--rn-shadow);
   padding: 6px;
+  width: 100%;
 }
 
 .rn-skill-option {
@@ -969,10 +972,15 @@ pre {
   border-radius: 10px;
   cursor: pointer;
   font-size: 13px;
+  width: 100%;
 }
 
 .rn-skill-option span {
   color: var(--rn-ink);
+  flex: 1;
+  text-align: left;
+  min-width: 0;
+  word-break: break-word;
 }
 
 .rn-skill-option em {
@@ -1244,6 +1252,9 @@ pre {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+  }
+  .rn-skill-dropdown {
+    max-height: 200px;
   }
   .rn-profile-header {
     flex-direction: column;
