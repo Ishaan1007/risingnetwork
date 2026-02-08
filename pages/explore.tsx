@@ -23,6 +23,7 @@ type Person = {
   portfolio_url?: string
   avatar_url?: string
   skills: Skill[]
+  college_info?: Array<{ college_id: number; colleges: { id: number; name: string; city: string } }>
 }
 
 const LIMIT = 12
@@ -43,6 +44,7 @@ export default function ExploreFreelancers() {
   const [selectedUniversityId, setSelectedUniversityId] = useState<string>('')
   const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([])
   const [filtersOpen, setFiltersOpen] = useState(false)
+  const [skillQuery, setSkillQuery] = useState('')
 
   // Fetch available cities and skills
   useEffect(() => {
@@ -140,6 +142,12 @@ export default function ExploreFreelancers() {
     ? allUniversities.filter((u) => u.city === selectedCity)
     : allUniversities
 
+  const filteredSkills = allSkills.filter((skill) => {
+    const q = skillQuery.trim().toLowerCase()
+    if (!q) return true
+    return `${skill.name} ${skill.category || ''}`.toLowerCase().includes(q)
+  })
+
   const totalPages = Math.ceil(totalCount / LIMIT)
 
   const handleSignIn = async () => {
@@ -200,8 +208,15 @@ export default function ExploreFreelancers() {
 
           <div className="rn-field">
             <label>Skills</label>
+            <input
+              className="rn-filter-search"
+              type="text"
+              placeholder="Search skills"
+              value={skillQuery}
+              onChange={(e) => setSkillQuery(e.target.value)}
+            />
             <div className="rn-skill-list">
-              {allSkills.map((skill) => (
+              {filteredSkills.map((skill) => (
                 <label
                   key={skill.id}
                   className={`rn-skill ${selectedSkillIds.includes(skill.id) ? 'is-active' : ''}`}
@@ -266,25 +281,14 @@ export default function ExploreFreelancers() {
                           {freelancer.first_name} {freelancer.last_name}
                         </h3>
                         <div className="rn-card-meta">
-                          <span className="rn-badge">
-                            {freelancer.role
-                              ? freelancer.role.charAt(0).toUpperCase() + freelancer.role.slice(1)
-                              : 'Professional'}
+                          <span>
+                            {freelancer.college_info?.[0]?.colleges?.name ||
+                              freelancer.city ||
+                              'Independent'}
                           </span>
-                          <span>{freelancer.city || 'Remote'}</span>
                         </div>
                       </div>
                     </div>
-
-                    {freelancer.bio && <p className="rn-bio">{freelancer.bio}</p>}
-
-                    {freelancer.skills.length > 0 && (
-                      <div className="rn-tags">
-                        {freelancer.skills.map((skill) => (
-                          <span key={skill.id}>{skill.name}</span>
-                        ))}
-                      </div>
-                    )}
 
                     <div className="rn-card-actions rn-card-actions-split">
                       <button
@@ -292,7 +296,7 @@ export default function ExploreFreelancers() {
                         type="button"
                         onClick={() => router.push(`/profiles/${freelancer.id}`)}
                       >
-                        View Profile
+                        Connect
                       </button>
                       {freelancer.email && (
                         <button

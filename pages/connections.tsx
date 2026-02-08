@@ -163,8 +163,8 @@ export default function Connections() {
   }
 
   return (
-    <main className="rn-shell">
-      <div className="rn-results-header">
+    <main className="rn-shell rn-connections-shell">
+      <div className="rn-results-header rn-connections-header">
         <div>
           <h1>Connections</h1>
           <p>Manage your requests and connections</p>

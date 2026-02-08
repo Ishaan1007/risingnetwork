@@ -307,6 +307,15 @@ pre {
   color: var(--rn-ink);
 }
 
+.rn-filter-search {
+  border: 1px solid var(--rn-line);
+  border-radius: 12px;
+  padding: 8px 10px;
+  font-size: 13px;
+  background: #f8fafc;
+  width: 100%;
+}
+
 .rn-select-wrap select {
   width: 100%;
   padding: 10px 12px;
@@ -394,6 +403,33 @@ pre {
 
 .rn-results-header p {
   color: var(--rn-muted);
+  font-size: 14px;
+}
+
+.rn-connections-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.rn-connections-header h1 {
+  font-size: 26px;
+}
+
+.rn-connections-header p {
+  font-size: 15px;
+}
+
+.rn-connections-shell .rn-profile-card {
+  padding: 24px;
+}
+
+.rn-connections-shell .rn-profile-card h2 {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.rn-connections-shell .rn-muted {
   font-size: 14px;
 }
 
@@ -965,22 +1001,25 @@ pre {
 }
 
 .rn-skill-option {
-  display: flex;
+  display: grid;
+  grid-template-columns: 18px 1fr;
   align-items: center;
-  gap: 10px;
+  column-gap: 10px;
   padding: 8px 10px;
   border-radius: 10px;
   cursor: pointer;
   font-size: 13px;
   width: 100%;
+  text-align: left;
+  line-height: 1.35;
 }
 
 .rn-skill-option span {
   color: var(--rn-ink);
-  flex: 1;
   text-align: left;
   min-width: 0;
   word-break: break-word;
+  white-space: normal;
 }
 
 .rn-skill-option em {
@@ -991,6 +1030,7 @@ pre {
 
 .rn-skill-option input {
   accent-color: var(--rn-blue);
+  margin: 0;
 }
 
 .rn-skill-option.is-active {
@@ -1321,6 +1361,22 @@ pre {
   }
   .rn-results-header h1 {
     font-size: 20px;
+  }
+  .rn-connections-header h1 {
+    font-size: 22px;
+  }
+  .rn-connections-shell {
+    gap: 14px;
+  }
+  .rn-connections-shell .rn-profile-card {
+    padding: 18px;
+  }
+  .rn-connections-shell .rn-profile-card h2 {
+    font-size: 16px;
+  }
+  .rn-connections-header p,
+  .rn-connections-shell .rn-muted {
+    font-size: 13px;
   }
   .rn-teams-header h1 {
     font-size: 20px;
