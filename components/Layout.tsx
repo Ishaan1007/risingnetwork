@@ -61,6 +61,14 @@ export default function Layout({ children }: LayoutProps) {
   }, [])
 
   useEffect(() => {
+    if (router.pathname !== '/search') return
+    const q = router.query.q
+    if (typeof q === 'string') {
+      setSearchInput(q)
+    }
+  }, [router.pathname, router.query.q])
+
+  useEffect(() => {
     let isMounted = true
 
     const checkProfile = async () => {

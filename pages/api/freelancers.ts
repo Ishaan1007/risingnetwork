@@ -10,7 +10,7 @@ export default async function handler(
   }
 
   try {
-    const { city, skills, limit = '10', offset = '0' } = req.query
+    const { city, skills, role, limit = '10', offset = '0' } = req.query
 
     const limitNum = Math.min(parseInt(limit as string) || 10, 100)
     const offsetNum = parseInt(offset as string) || 0
@@ -45,11 +45,14 @@ export default async function handler(
       `,
         { count: 'exact' }
       )
-      .eq('role', 'freelancer')
 
     // Filter by city if provided
     if (city) {
-      query = query.eq('city', city)
+      query = query.ilike('city', String(city))
+    }
+
+    if (role) {
+      query = query.eq('role', role)
     }
 
     // Apply limit and offset
@@ -82,6 +85,7 @@ export default async function handler(
       last_name: profile.last_name,
       email: profile.email,
       city: profile.city,
+      role: profile.role,
       bio: profile.bio,
       linkedin_url: profile.linkedin_url,
       github_url: profile.github_url,

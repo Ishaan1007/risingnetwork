@@ -862,6 +862,10 @@ pre {
   font-size: 13px;
 }
 
+.rn-profile-row input[type="file"] {
+  max-width: 100%;
+}
+
 .rn-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -889,6 +893,8 @@ pre {
   font-size: 14px;
   font-family: 'Manrope', 'Segoe UI', sans-serif;
   background: #f8fafc;
+  width: 100%;
+  max-width: 100%;
 }
 
 .rn-form-field textarea {

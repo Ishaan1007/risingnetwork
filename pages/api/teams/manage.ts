@@ -8,7 +8,8 @@ export default async function handler(
   if (req.method === 'DELETE') {
     // Delete team (creator only) or kick member or leave team
     try {
-      const { action, team_id, user_id } = req.body
+      const { action, team_id, user_id, requester_id } = req.body
+      const requesterId = String(req.headers['x-user-id'] || requester_id || user_id || '')
 
       if (!action || !team_id) {
         return res.status(400).json({ error: 'action and team_id required' })
@@ -26,7 +27,7 @@ export default async function handler(
           return res.status(404).json({ error: 'Team not found' })
         }
 
-        if (team.created_by !== user_id) {
+        if (!requesterId || team.created_by !== requesterId) {
           return res.status(403).json({ error: 'Only team creator can delete' })
         }
 
@@ -60,7 +61,7 @@ export default async function handler(
           return res.status(404).json({ error: 'Team not found' })
         }
 
-        if (team.created_by !== user_id) {
+        if (!requesterId || team.created_by !== requesterId) {
           return res.status(403).json({ error: 'Only team creator can kick members' })
         }
 
@@ -78,11 +79,12 @@ export default async function handler(
         return res.status(200).json({ message: 'Member removed' })
       } else if (action === 'leave-team') {
         // Any member can leave
+        const targetUserId = user_id || requesterId
         const { error: removeError } = await supabaseServer
           .from('team_members')
           .delete()
           .eq('team_id', team_id)
-          .eq('user_id', user_id)
+          .eq('user_id', targetUserId)
 
         if (removeError) {
           return res.status(500).json({ error: removeError.message })

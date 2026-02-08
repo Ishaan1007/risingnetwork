@@ -202,6 +202,7 @@ export default function TeamDetail() {
         body: JSON.stringify({
           action: action === 'delete' ? 'delete-team' : action === 'kick' ? 'kick-member' : 'leave-team',
           team_id: team?.id,
+          requester_id: userId,
           user_id: action === 'kick' ? memberId : action === 'leave' ? userId : undefined,
         }),
       })
@@ -386,6 +387,7 @@ export default function TeamDetail() {
             }}
           >
             <LogOutIcon size={16} />
+            <span>Leave Team</span>
           </button>
         )}
         {isTeamCreator && (
@@ -404,6 +406,7 @@ export default function TeamDetail() {
             }}
           >
             <TrashIcon size={16} />
+            <span>Delete Team</span>
           </button>
         )}
       </div>

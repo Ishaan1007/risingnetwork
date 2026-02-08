@@ -42,6 +42,7 @@ export default function Profile() {
   const [allColleges, setAllColleges] = useState<College[]>([])
   const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([])
   const [collegeInfo, setCollegeInfo] = useState<CollegeInfo>({ college_id: null, major: '', graduation_year: null })
+  const [universityQuery, setUniversityQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -339,6 +340,12 @@ export default function Profile() {
     )
   }
 
+  const filteredColleges = allColleges.filter((c) => {
+    const query = universityQuery.trim().toLowerCase()
+    if (!query) return true
+    return `${c.name} ${c.city}`.toLowerCase().includes(query)
+  })
+
   return (
     <main className="rn-profile-shell">
       <div className="rn-profile-card">
@@ -413,14 +420,20 @@ export default function Profile() {
           {profile.role === 'student' && (
             <>
               <div className="rn-form-field full">
-                <label htmlFor="college">College *</label>
+                <label htmlFor="college">University *</label>
+                <input
+                  type="text"
+                  placeholder="Search university by name or city"
+                  value={universityQuery}
+                  onChange={(e) => setUniversityQuery(e.target.value)}
+                />
                 <select
                   id="college"
                   value={collegeInfo.college_id || ''}
                   onChange={(e) => setCollegeInfo({ ...collegeInfo, college_id: e.target.value ? parseInt(e.target.value) : null })}
                 >
-                  <option value="">Select your college</option>
-                  {allColleges.map((c) => (
+                  <option value="">Select your university</option>
+                  {filteredColleges.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name} ({c.city})
                     </option>

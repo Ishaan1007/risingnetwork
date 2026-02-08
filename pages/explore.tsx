@@ -10,12 +10,13 @@ type Skill = {
   category?: string
 }
 
-type Freelancer = {
+type Person = {
   id: string
   first_name: string
   last_name: string
   email: string
   city: string
+  role?: string | null
   bio: string
   linkedin_url?: string
   github_url?: string
@@ -28,7 +29,7 @@ const LIMIT = 12
 
 export default function ExploreFreelancers() {
   const router = useRouter()
-  const [freelancers, setFreelancers] = useState<Freelancer[]>([])
+  const [freelancers, setFreelancers] = useState<Person[]>([])
   const [allCities, setAllCities] = useState<string[]>([])
   const [allSkills, setAllSkills] = useState<Skill[]>([])
   const [loading, setLoading] = useState(false)
@@ -62,11 +63,10 @@ export default function ExploreFreelancers() {
 
   useEffect(() => {
     const init = async () => {
-      // Fetch all unique cities (from freelancers only)
+      // Fetch all unique cities
       const { data: citiesData } = await supabase
         .from('profiles')
         .select('city')
-        .eq('role', 'freelancer')
         .not('city', 'is', null)
 
       if (citiesData) {
@@ -194,7 +194,7 @@ export default function ExploreFreelancers() {
         <section className="rn-results">
           <header className="rn-results-header">
             <div>
-              <h1>Discover Professionals</h1>
+              <h1>Discover People</h1>
               <p>{totalCount} people found</p>
             </div>
             {totalPages > 1 && (
@@ -228,50 +228,54 @@ export default function ExploreFreelancers() {
             <>
               <div className="rn-cards">
                 {freelancers.map((freelancer) => (
-                    <article key={freelancer.id} className="rn-card">
-                      <div className="rn-card-head">
-                        <Avatar src={freelancer.avatar_url} alt="avatar" size={56} />
-                        <div>
-                          <h3>
-                            {freelancer.first_name} {freelancer.last_name}
-                          </h3>
-                          <div className="rn-card-meta">
-                            <span className="rn-badge">Freelancer</span>
-                            <span>{freelancer.city || 'Remote'}</span>
-                          </div>
+                  <article key={freelancer.id} className="rn-card">
+                    <div className="rn-card-head">
+                      <Avatar src={freelancer.avatar_url} alt="avatar" size={56} />
+                      <div>
+                        <h3>
+                          {freelancer.first_name} {freelancer.last_name}
+                        </h3>
+                        <div className="rn-card-meta">
+                          <span className="rn-badge">
+                            {freelancer.role
+                              ? freelancer.role.charAt(0).toUpperCase() + freelancer.role.slice(1)
+                              : 'Professional'}
+                          </span>
+                          <span>{freelancer.city || 'Remote'}</span>
                         </div>
                       </div>
+                    </div>
 
-                      {freelancer.bio && <p className="rn-bio">{freelancer.bio}</p>}
+                    {freelancer.bio && <p className="rn-bio">{freelancer.bio}</p>}
 
-                      {freelancer.skills.length > 0 && (
-                        <div className="rn-tags">
-                          {freelancer.skills.map((skill) => (
-                            <span key={skill.id}>{skill.name}</span>
-                          ))}
-                        </div>
-                      )}
+                    {freelancer.skills.length > 0 && (
+                      <div className="rn-tags">
+                        {freelancer.skills.map((skill) => (
+                          <span key={skill.id}>{skill.name}</span>
+                        ))}
+                      </div>
+                    )}
 
-                      <div className="rn-card-actions rn-card-actions-split">
+                    <div className="rn-card-actions rn-card-actions-split">
+                      <button
+                        className="rn-primary-btn"
+                        type="button"
+                        onClick={() => router.push(`/profiles/${freelancer.id}`)}
+                      >
+                        View Profile
+                      </button>
+                      {freelancer.email && (
                         <button
-                          className="rn-primary-btn"
+                          className="rn-secondary-btn"
                           type="button"
-                          onClick={() => router.push(`/profiles/${freelancer.id}`)}
+                          onClick={() => window.open(`mailto:${freelancer.email}`)}
                         >
-                          View Profile
+                          Contact
                         </button>
-                        {freelancer.email && (
-                          <button
-                            className="rn-secondary-btn"
-                            type="button"
-                            onClick={() => window.open(`mailto:${freelancer.email}`)}
-                          >
-                            Contact
-                          </button>
-                        )}
-                      </div>
-                    </article>
-                  ))}
+                      )}
+                    </div>
+                  </article>
+                ))}
                 </div>
 
               {totalPages > 1 && (

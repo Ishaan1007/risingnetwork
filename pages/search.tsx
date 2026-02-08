@@ -57,24 +57,14 @@ export default function SearchPage() {
     fetchResults()
   }, [term, page])
 
-  const doSearch = (e?: React.FormEvent) => {
-    e?.preventDefault()
-    if (!term) return
-    router.push(`/search?q=${encodeURIComponent(term)}`)
-  }
-
   return (
     <main style={{ padding: 24, maxWidth: 1000, margin: '0 auto' }}>
       <h1>Search</h1>
-
-      <form onSubmit={doSearch} style={{ marginBottom: 16 }}>
-        <input
-          value={term}
-          onChange={(e) => setTerm(e.target.value)}
-          placeholder="Search people, skills or cities"
-          style={{ width: '100%', padding: 10, borderRadius: 6, border: '1px solid #d1d5db' }}
-        />
-      </form>
+      {term && (
+        <p style={{ color: '#6b7280', marginTop: 6 }}>
+          Results for <strong>{term}</strong>. Use the top search bar to refine.
+        </p>
+      )}
 
       {loading ? (
         <div className="card">
@@ -103,6 +93,20 @@ export default function SearchPage() {
                 ))}
               </div>
               <div style={{ marginTop: 10, display: 'flex', gap: 8 }}>
+                <button
+                  type="button"
+                  onClick={() => router.push(`/profiles/${r.id}`)}
+                  style={{ background: '#2563eb', color: 'white', padding: '6px 10px', borderRadius: 6 }}
+                >
+                  Open Profile
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push(`/profiles/${r.id}`)}
+                  style={{ background: '#10b981', color: 'white', padding: '6px 10px', borderRadius: 6 }}
+                >
+                  Connect
+                </button>
                 {r.linkedin_url && (<a href={r.linkedin_url} target="_blank" rel="noreferrer" style={{ background: '#0a66c2', color: 'white', padding: '6px 10px', borderRadius: 6 }}>LinkedIn</a>)}
                 {r.github_url && (<a href={r.github_url} target="_blank" rel="noreferrer" style={{ background: '#111', color: 'white', padding: '6px 10px', borderRadius: 6 }}>GitHub</a>)}
                 {r.portfolio_url && (<a href={r.portfolio_url} target="_blank" rel="noreferrer" style={{ background: '#f59e0b', color: 'white', padding: '6px 10px', borderRadius: 6 }}>Portfolio</a>)}
