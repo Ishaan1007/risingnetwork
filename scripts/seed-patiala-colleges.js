@@ -17,55 +17,47 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const patialaColleges = [
-  // Universities
-  { name: 'Punjab Agricultural University (PAU)', city: 'Patiala' },
-  { name: 'Punjabi University', city: 'Patiala' },
-  { name: 'Baba Farid University of Health Sciences', city: 'Patiala' },
-  { name: 'Thapar Institute of Engineering and Technology', city: 'Patiala' },
-  
-  // Engineering Colleges
-  { name: 'Aryabhatta College of Engineering and Technology', city: 'Patiala' },
-  { name: 'CGC Landran (Chandigarh Group of Colleges)', city: 'Patiala' },
-  { name: 'Malwa College of Engineering', city: 'Patiala' },
-  { name: 'Global Institute of Engineering and Technology', city: 'Patiala' },
-  
-  // Medical Colleges
-  { name: 'Patiala Medical College', city: 'Patiala' },
-  { name: 'Sri Guru Nanak Dev Medical College', city: 'Patiala' },
-  
-  // Arts & Science Colleges
-  { name: 'Mehta College', city: 'Patiala' },
-  { name: 'Khalsa College', city: 'Patiala' },
-  { name: 'DAV College', city: 'Patiala' },
-  { name: 'Aryabhatta College', city: 'Patiala' },
-  { name: 'Lyall Singh College', city: 'Patiala' },
-  { name: 'Krishna College', city: 'Patiala' },
-  { name: 'Shiv Shankar College', city: 'Patiala' },
-  { name: 'St. James College', city: 'Patiala' },
-  
-  // Management/Commerce Colleges
-  { name: 'Institute of Business Management, Patiala', city: 'Patiala' },
-  { name: 'Patiala College of Commerce', city: 'Patiala' },
-  
-  // Other Colleges
-  { name: 'Government College of Education', city: 'Patiala' },
-  { name: 'Akal University', city: 'Patiala' },
-  { name: 'Career Point University', city: 'Patiala' },
+  { name: 'Punjabi University, Patiala', city: 'Patiala' },
+  { name: 'Thapar Institute of Engineering & Technology', city: 'Patiala' },
+  { name: 'Chitkara University', city: 'Rajpura' },
+  { name: 'CGC University, Mohali', city: 'Mohali' },
+  { name: 'Chandigarh University', city: 'Gharuan' },
+  { name: 'Chandigarh Group of Colleges, Landran', city: 'Landran' },
+  { name: 'Panjab University', city: 'Chandigarh' },
+  { name: 'Punjab Engineering College (Deemed to be University)', city: 'Chandigarh' },
+  { name: 'Lovely Professional University', city: 'Phagwara' },
+  { name: 'Amity University Punjab', city: 'Mohali' },
+  { name: 'Indian Institute of Technology Ropar', city: 'Rupnagar' },
 ];
 
 async function seedColleges() {
   console.log(`Seeding ${patialaColleges.length} colleges in Patiala...`);
   
   try {
-    // Insert colleges
+    // Upsert colleges - skips duplicates if unique(name) or unique(name,city) exists
     const { data, error } = await supabase
       .from('colleges')
-      .insert(patialaColleges)
+      .upsert(patialaColleges, {
+        onConflict: 'name',
+        ignoreDuplicates: true,
+      })
       .select();
 
     if (error) {
-      console.error('Error inserting colleges:', error);
-      process.exit(1);
+      // Fallback: try insert if upsert fails (e.g. no unique constraint)
+      const { data: insertData, error: insertError } = await supabase
+        .from('colleges')
+        .insert(patialaColleges)
+        .select();
+      if (insertError) {
+        console.error('Error inserting colleges:', insertError);
+        process.exit(1);
+      }
+      console.log(`✅ Successfully seeded ${insertData?.length || 0} colleges!`);
+      insertData?.slice(0, 5).forEach((college) => {
+        console.log(`  - ${college.name} (${college.city})`);
+      });
+      return;
     }
 
     console.log(`✅ Successfully seeded ${data?.length || 0} colleges!`);

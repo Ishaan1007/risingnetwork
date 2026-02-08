@@ -6,6 +6,7 @@ import {
   LogOutIcon,
   ProfileIcon,
   SearchIcon,
+  ChatIcon,
   UsersIcon,
   UserPlusIcon,
 } from './Icons'
@@ -203,6 +204,14 @@ export default function Layout({ children }: LayoutProps) {
               <button
                 className="rn-nav-btn is-locked"
                 type="button"
+                onClick={() => alert('Please log in to view Chat.')}
+              >
+                <ChatIcon size={20} />
+                <span>Chat</span>
+              </button>
+              <button
+                className="rn-nav-btn is-locked"
+                type="button"
                 onClick={() => alert('Please log in to view your Profile.')}
               >
                 <span className="rn-nav-icon">
@@ -224,6 +233,14 @@ export default function Layout({ children }: LayoutProps) {
               >
                 <UsersIcon size={20} />
                 <span>Teams</span>
+              </button>
+              <button
+                className={`rn-nav-btn ${isActive('/chat') ? 'is-active' : ''}`}
+                type="button"
+                onClick={() => router.push('/chat')}
+              >
+                <ChatIcon size={20} />
+                <span>Chat</span>
               </button>
               <button
                 className={`rn-nav-btn ${isActive('/connections') ? 'is-active' : ''}`}

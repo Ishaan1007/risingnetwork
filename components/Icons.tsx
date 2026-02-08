@@ -189,3 +189,11 @@ export function BellIcon({ size = 18, color, strokeWidth = 2 }: IconProps) {
     </svg>
   )
 }
+
+export function ChatIcon({ size = 18, color, strokeWidth = 2 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" style={{ color }} {...base} strokeWidth={strokeWidth}>
+      <path d="M21 14a4 4 0 0 1-4 4H8l-5 4V6a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
+    </svg>
+  )
+}

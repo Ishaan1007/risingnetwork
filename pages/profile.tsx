@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
 import { LoaderIcon, SaveIcon } from '../components/Icons'
@@ -144,15 +144,33 @@ export default function Profile() {
     return () => subscription?.unsubscribe()
   }, [router])
 
-  const handleProfileChange = (field: keyof Profile, value: any) => {
+  const handleProfileChange = useCallback((field: keyof Profile, value: any) => {
     setProfile((prev) => (prev ? { ...prev, [field]: value } : null))
-  }
+  }, [])
 
-  const handleSkillToggle = (skillId: number) => {
+  const handleSkillToggle = useCallback((skillId: number) => {
     setSelectedSkillIds((prev) =>
       prev.includes(skillId) ? prev.filter((id) => id !== skillId) : [...prev, skillId]
     )
-  }
+  }, [])
+
+  const filteredColleges = allColleges.filter((c) => {
+    const query = universityQuery.trim().toLowerCase()
+    if (!query) return true
+    return `${c.name} ${c.city}`.toLowerCase().includes(query)
+  })
+
+  useEffect(() => {
+    const query = universityQuery.trim().toLowerCase()
+    if (!query) return
+    if (filteredColleges.length === 1) {
+      const only = filteredColleges[0]
+      if (only && only.id !== collegeInfo.college_id) {
+        setCollegeInfo({ ...collegeInfo, college_id: only.id })
+        handleProfileChange('city', only.city)
+      }
+    }
+  }, [universityQuery, filteredColleges, collegeInfo, handleProfileChange])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -342,12 +360,6 @@ export default function Profile() {
       </main>
     )
   }
-
-  const filteredColleges = allColleges.filter((c) => {
-    const query = universityQuery.trim().toLowerCase()
-    if (!query) return true
-    return `${c.name} ${c.city}`.toLowerCase().includes(query)
-  })
 
   const filteredSkills = allSkills.filter((s) => {
     const query = skillQuery.trim().toLowerCase()

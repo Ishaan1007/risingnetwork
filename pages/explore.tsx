@@ -31,7 +31,6 @@ const LIMIT = 12
 export default function ExploreFreelancers() {
   const router = useRouter()
   const [freelancers, setFreelancers] = useState<Person[]>([])
-  const [allCities, setAllCities] = useState<string[]>([])
   const [allSkills, setAllSkills] = useState<Skill[]>([])
   const [allUniversities, setAllUniversities] = useState<Array<{ id: number; name: string; city: string }>>([])
   const [loading, setLoading] = useState(false)
@@ -40,7 +39,6 @@ export default function ExploreFreelancers() {
   const [session, setSession] = useState<any>(null)
 
   // Filters
-  const [selectedCity, setSelectedCity] = useState<string>('')
   const [selectedUniversityId, setSelectedUniversityId] = useState<string>('')
   const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([])
   const [filtersOpen, setFiltersOpen] = useState(false)
@@ -75,8 +73,6 @@ export default function ExploreFreelancers() {
 
       if (collegesData) {
         setAllUniversities(collegesData)
-        const uniqueCities = Array.from(new Set(collegesData.map((c: any) => c.city))).filter(Boolean)
-        setAllCities(uniqueCities as string[])
       }
 
       // Fetch all skills
@@ -99,7 +95,6 @@ export default function ExploreFreelancers() {
       setLoading(true)
       try {
         const params = new URLSearchParams()
-        if (selectedCity) params.append('city', selectedCity)
         if (selectedUniversityId) params.append('university_id', selectedUniversityId)
         if (selectedSkillIds.length > 0) {
           params.append('skills', selectedSkillIds.join(','))
@@ -124,7 +119,7 @@ export default function ExploreFreelancers() {
     }
 
     fetchFreelancers()
-  }, [selectedCity, selectedUniversityId, selectedSkillIds, page])
+  }, [selectedUniversityId, selectedSkillIds, page])
 
   const handleSkillToggle = (skillId: number) => {
     setSelectedSkillIds((prev) =>
@@ -133,19 +128,24 @@ export default function ExploreFreelancers() {
     setPage(0) // Reset to first page
   }
 
-  const handleCityChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedCity(e.target.value)
-    setSelectedUniversityId('')
-    setPage(0) // Reset to first page
-  }
-
   const filteredUniversities = allUniversities
-    .filter((u) => (selectedCity ? u.city === selectedCity : true))
     .filter((u) => {
       const q = universityQuery.trim().toLowerCase()
       if (!q) return true
       return `${u.name} ${u.city}`.toLowerCase().includes(q)
     })
+
+  useEffect(() => {
+    const q = universityQuery.trim().toLowerCase()
+    if (!q) return
+    if (filteredUniversities.length === 1) {
+      const only = filteredUniversities[0]
+      if (only && String(only.id) !== selectedUniversityId) {
+        setSelectedUniversityId(String(only.id))
+        setPage(0)
+      }
+    }
+  }, [universityQuery, filteredUniversities, selectedUniversityId])
 
   const filteredSkills = allSkills.filter((skill) => {
     const q = skillQuery.trim().toLowerCase()
@@ -176,29 +176,18 @@ export default function ExploreFreelancers() {
           <h2>Filters</h2>
 
           <div className="rn-field">
-            <label htmlFor="city">City</label>
-            <div className="rn-select-wrap">
-              <select id="city" value={selectedCity} onChange={handleCityChange}>
-                <option value="">All cities</option>
-                {allCities.map((city) => (
-                  <option key={city} value={city}>
-                    {city}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="rn-field">
             <label htmlFor="university">University</label>
             <div className="rn-select-wrap">
               <input
                 className="rn-filter-search"
                 type="text"
-                placeholder={selectedCity ? 'Search university' : 'Select a city first'}
+                placeholder="Search universities"
                 value={universityQuery}
-                onChange={(e) => setUniversityQuery(e.target.value)}
-                disabled={!selectedCity}
+                onChange={(e) => {
+                  setUniversityQuery(e.target.value)
+                  setSelectedUniversityId('')
+                  setPage(0)
+                }}
               />
               <select
                 id="university"
@@ -207,9 +196,8 @@ export default function ExploreFreelancers() {
                   setSelectedUniversityId(e.target.value)
                   setPage(0)
                 }}
-                disabled={!selectedCity}
               >
-                <option value="">{selectedCity ? 'All universities' : 'Select a city first'}</option>
+                <option value="">All universities</option>
                 {filteredUniversities.map((u) => (
                   <option key={u.id} value={u.id}>
                     {u.name}
