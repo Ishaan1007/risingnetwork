@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
 import { LoaderIcon, SaveIcon } from '../components/Icons'
@@ -51,6 +51,7 @@ export default function Profile() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   // Fetch session and profile data
   useEffect(() => {
@@ -371,7 +372,23 @@ export default function Profile() {
             <strong>Profile Photo</strong>
             <p>Image editing not available in this demo</p>
             <div style={{ marginTop: 8 }}>
-              <input type="file" accept="image/*" onChange={(e) => handleUpload(e.target.files)} disabled={uploading} />
+              <input
+                ref={fileInputRef}
+                id="avatarUpload"
+                className="rn-file-input"
+                type="file"
+                accept="image/*"
+                onChange={(e) => handleUpload(e.target.files)}
+                disabled={uploading}
+              />
+              <button
+                type="button"
+                className="rn-primary-btn rn-upload-btn"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+              >
+                {uploading ? 'Uploading...' : 'Upload Photo'}
+              </button>
               {uploading && (
                 <small style={{ color: '#6b7280', display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 8 }}>
                   <span className="spin"><LoaderIcon size={14} /></span>

@@ -61,9 +61,6 @@ export default async function handler(
       query = query.eq('role', role)
     }
 
-    // Apply limit and offset
-    query = query.range(offsetNum, offsetNum + limitNum - 1)
-
     const { data, error, count } = await query
 
     if (error) {
@@ -100,8 +97,11 @@ export default async function handler(
       })
     }
 
+    const totalFiltered = filtered.length
+    const paged = filtered.slice(offsetNum, offsetNum + limitNum)
+
     // Transform response to flatten skills
-    const transformed = filtered.map((profile: any) => ({
+    const transformed = paged.map((profile: any) => ({
       id: profile.id,
       first_name: profile.first_name,
       last_name: profile.last_name,
@@ -120,7 +120,7 @@ export default async function handler(
     return res.status(200).json({
       data: transformed,
       count: transformed.length,
-      total: count || 0,
+      total: totalFiltered,
       limit: limitNum,
       offset: offsetNum,
     })
