@@ -35,7 +35,7 @@ export default function SearchPage() {
   }, [q])
 
   useEffect(() => {
-    const fetch = async () => {
+    const fetchResults = async () => {
       if (!term) return
       setLoading(true)
       try {
@@ -54,7 +54,7 @@ export default function SearchPage() {
       }
     }
 
-    fetch()
+    fetchResults()
   }, [term, page])
 
   const doSearch = (e?: React.FormEvent) => {
