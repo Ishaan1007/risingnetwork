@@ -17,13 +17,18 @@ type Member = {
   email: string
 }
 
+type TeamMemberProfile = {
+  first_name: string
+  last_name: string
+}
+
 type Team = {
   id: number
   name: string
   description: string
   max_members: number
   created_by: string
-  members: Array<{ user_id: string; profiles: { first_name: string; last_name: string } }>
+  members: Array<{ user_id: string; profiles: TeamMemberProfile }>
 }
 
 type Student = {
@@ -101,9 +106,17 @@ export default function TeamDetail() {
         .single()
 
       if (teamData) {
+        const members = (teamData.team_members || [])
+          .filter((tm: any) => tm.status === 'accepted')
+          .map((tm: any) => {
+            const profile = Array.isArray(tm.profiles) ? tm.profiles[0] : tm.profiles
+            return profile ? { user_id: tm.user_id, profiles: profile } : null
+          })
+          .filter(Boolean) as Array<{ user_id: string; profiles: TeamMemberProfile }>
+
         setTeam({
           ...teamData,
-          members: teamData.team_members.filter((tm: any) => tm.status === 'accepted'),
+          members,
         })
       }
 
