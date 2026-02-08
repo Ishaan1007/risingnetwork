@@ -1,0 +1,541 @@
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/router'
+import { supabase } from '../lib/supabaseClient'
+import { LoaderIcon, SaveIcon } from '../components/Icons'
+import Avatar from '../components/Avatar'
+
+type Profile = {
+  id: string
+  first_name: string
+  last_name: string
+  city: string
+  role: 'student' | 'freelancer' | null
+  bio: string
+  linkedin_url?: string
+  github_url?: string
+  portfolio_url?: string
+  avatar_url?: string
+}
+
+type Skill = {
+  id: number
+  name: string
+  category?: string
+}
+
+type College = {
+  id: number
+  name: string
+  city: string
+}
+
+type CollegeInfo = {
+  college_id: number | null
+  major: string
+  graduation_year: number | null
+}
+
+export default function Profile() {
+  const router = useRouter()
+  const [profile, setProfile] = useState<Profile | null>(null)
+  const [allSkills, setAllSkills] = useState<Skill[]>([])
+  const [allColleges, setAllColleges] = useState<College[]>([])
+  const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([])
+  const [collegeInfo, setCollegeInfo] = useState<CollegeInfo>({ college_id: null, major: '', graduation_year: null })
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [userId, setUserId] = useState<string | null>(null)
+
+  // Fetch session and profile data
+  useEffect(() => {
+    const init = async (userId: string) => {
+      try {
+        // Fetch profile - no RLS, so this should work
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', userId)
+          .single()
+
+        if (profileError) {
+          console.error('profile fetch error', profileError)
+          setMessage({ type: 'error', text: 'Failed to load profile' })
+          setLoading(false)
+          return
+        }
+
+        setProfile(profileData)
+
+        // Fetch all skills
+        const { data: skillsData, error: skillsError } = await supabase
+          .from('skills')
+          .select('id, name, category')
+          .order('name')
+
+        if (skillsError) {
+          console.error('skills fetch error', skillsError)
+        } else {
+          setAllSkills(skillsData || [])
+        }
+
+        // Fetch all colleges
+        const { data: collegesData } = await supabase
+          .from('colleges')
+          .select('id, name, city')
+          .order('name')
+
+        if (collegesData) {
+          setAllColleges(collegesData)
+        }
+
+        // Fetch user's current skills
+        const { data: userSkillsData, error: userSkillsError } = await supabase
+          .from('user_skills')
+          .select('skill_id')
+          .eq('user_id', userId)
+
+        if (!userSkillsError && userSkillsData) {
+          setSelectedSkillIds(userSkillsData.map((us) => us.skill_id))
+        }
+
+        // Fetch user's college info (if student)
+        const { data: collegeData } = await supabase
+          .from('college_info')
+          .select('college_id, major, graduation_year')
+          .eq('user_id', userId)
+          .single()
+
+        if (collegeData) {
+          setCollegeInfo({
+            college_id: collegeData.college_id,
+            major: collegeData.major || '',
+            graduation_year: collegeData.graduation_year,
+          })
+        }
+
+        setLoading(false)
+      } catch (error) {
+        console.error('init error', error)
+        setMessage({ type: 'error', text: 'An error occurred' })
+        setLoading(false)
+      }
+    }
+
+    // Use onAuthStateChange for reliability
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session?.user) {
+        router.push('/')
+        return
+      }
+
+      setUserId(session.user.id)
+      init(session.user.id)
+    })
+
+    return () => subscription?.unsubscribe()
+  }, [router])
+
+  const handleProfileChange = (field: keyof Profile, value: any) => {
+    setProfile((prev) => (prev ? { ...prev, [field]: value } : null))
+  }
+
+  const handleSkillToggle = (skillId: number) => {
+    setSelectedSkillIds((prev) =>
+      prev.includes(skillId) ? prev.filter((id) => id !== skillId) : [...prev, skillId]
+    )
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!profile || !userId) return
+
+    setSaving(true)
+    setMessage(null)
+
+    try {
+      // Update profile
+      const { error: profileUpdateError } = await supabase
+        .from('profiles')
+        .update({
+          first_name: profile.first_name,
+          last_name: profile.last_name,
+          city: profile.city,
+          role: profile.role,
+          bio: profile.bio,
+          linkedin_url: profile.linkedin_url || null,
+          github_url: profile.github_url || null,
+          portfolio_url: profile.portfolio_url || null,
+          avatar_url: profile.avatar_url || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId)
+
+      if (profileUpdateError) {
+        throw profileUpdateError
+      }
+
+      // Delete old user_skills
+      const { error: deleteError } = await supabase
+        .from('user_skills')
+        .delete()
+        .eq('user_id', userId)
+
+      if (deleteError) {
+        throw deleteError
+      }
+
+      // Insert new user_skills (upsert to avoid duplicate key errors)
+      if (selectedSkillIds.length > 0) {
+        const skillRecords = selectedSkillIds.map((skillId) => ({
+          user_id: userId,
+          skill_id: skillId,
+        }))
+
+        const { error: insertError } = await supabase
+          .from('user_skills')
+          .upsert(skillRecords, { onConflict: 'user_id,skill_id' })
+
+        if (insertError) {
+          throw insertError
+        }
+      }
+
+      // Upsert college info (only if role is student and college_id selected)
+      if (profile.role === 'student' && collegeInfo.college_id) {
+        const { error: collegeError } = await supabase
+          .from('college_info')
+          .upsert({
+            user_id: userId,
+            college_id: collegeInfo.college_id,
+            major: collegeInfo.major || null,
+            graduation_year: collegeInfo.graduation_year || null,
+          }, { onConflict: 'user_id' })
+
+        if (collegeError) {
+          throw collegeError
+        }
+      }
+
+      setMessage({ type: 'success', text: 'Profile updated successfully!' })
+      // Auto-dismiss success message after 3 seconds
+      setTimeout(() => setMessage(null), 3000)
+    } catch (error: any) {
+      console.error('save error', error)
+      setMessage({
+        type: 'error',
+        text: error.message || 'Failed to save profile. Please try again.',
+      })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleUpload = async (files: FileList | null) => {
+    if (!files || files.length === 0 || !userId) return
+    const file = files[0]
+    const maxBytes = 2 * 1024 * 1024
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowedTypes.includes(file.type)) {
+      setMessage({ type: 'error', text: 'Please upload a JPEG, PNG, or WebP image.' })
+      return
+    }
+    if (file.size > maxBytes) {
+      setMessage({ type: 'error', text: 'Image must be 2MB or smaller.' })
+      return
+    }
+    setUploading(true)
+    setMessage(null)
+    const localUrl = URL.createObjectURL(file)
+    setAvatarPreview((prev) => {
+      if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev)
+      return localUrl
+    })
+
+    const attemptUpload = async (retryCreateBucket = true) => {
+      try {
+        const ext = file.name.split('.').pop()
+        const path = `avatars/${userId}-${Date.now()}.${ext}`
+
+        const { error: uploadError } = await supabase.storage
+          .from('avatars')
+          .upload(path, file, { upsert: true })
+
+        if (uploadError) throw uploadError
+
+        const { data: urlData } = await supabase.storage.from('avatars').getPublicUrl(path)
+        const publicUrl = urlData?.publicUrl || null
+
+        // Update profile immediately with avatar_url
+        const { error: profileErr } = await supabase
+          .from('profiles')
+          .update({ avatar_url: publicUrl })
+          .eq('id', userId)
+
+        if (profileErr) throw profileErr
+
+        setProfile((p) => (p ? { ...p, avatar_url: publicUrl } : p))
+        setAvatarPreview((prev) => {
+          if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev)
+          return publicUrl
+        })
+        setMessage({ type: 'success', text: 'Avatar uploaded.' })
+        // Auto-dismiss success message after 3 seconds
+        setTimeout(() => setMessage(null), 3000)
+      } catch (err: any) {
+        console.error('upload error', err)
+        const msg = String(err?.message || '').toLowerCase()
+        // If bucket not found, attempt to create it via server API and retry once
+        if (retryCreateBucket && (msg.includes('bucket') && msg.includes('not') || msg.includes('does not exist'))) {
+          try {
+            await fetch('/api/storage/create-avatar-bucket', { method: 'POST' })
+            // retry upload once
+            await attemptUpload(false)
+            return
+          } catch (createErr) {
+            console.error('bucket create attempt failed', createErr)
+            setMessage({ type: 'error', text: 'Failed to create storage bucket for avatars.' })
+            return
+          }
+        }
+
+        setMessage({ type: 'error', text: err.message || 'Upload failed' })
+      }
+    }
+
+    try {
+      await attemptUpload(true)
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  if (loading) {
+    return (
+      <main className="rn-shell">
+        <div role="status" aria-label="Loading profile" className="rn-loading">
+          <span className="spin">
+            <LoaderIcon size={20} />
+          </span>
+        </div>
+      </main>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <main className="rn-shell">
+        <div className="rn-empty">
+          <p>Profile not found. Please sign in.</p>
+          <button onClick={() => router.push('/')} className="rn-primary-btn" style={{ marginTop: 12 }}>
+            Go back
+          </button>
+        </div>
+      </main>
+    )
+  }
+
+  return (
+    <main className="rn-profile-shell">
+      <div className="rn-profile-card">
+        <h1 className="rn-profile-title">Edit Profile</h1>
+
+        {message && (
+          <div className={`rn-message ${message.type}`}>
+            {message.text}
+          </div>
+        )}
+
+        <div className="rn-profile-row">
+          <Avatar src={avatarPreview || profile.avatar_url} alt="avatar" size={84} />
+          <div>
+            <strong>Profile Photo</strong>
+            <p>Image editing not available in this demo</p>
+            <div style={{ marginTop: 8 }}>
+              <input type="file" accept="image/*" onChange={(e) => handleUpload(e.target.files)} disabled={uploading} />
+              {uploading && (
+                <small style={{ color: '#6b7280', display: 'inline-flex', alignItems: 'center', gap: 6, marginLeft: 8 }}>
+                  <span className="spin"><LoaderIcon size={14} /></span>
+                </small>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="rn-form">
+          <div className="rn-form-field">
+            <label htmlFor="firstName">First Name *</label>
+            <input
+              id="firstName"
+              type="text"
+              value={profile.first_name}
+              onChange={(e) => handleProfileChange('first_name', e.target.value)}
+            />
+          </div>
+
+          <div className="rn-form-field">
+            <label htmlFor="lastName">Last Name *</label>
+            <input
+              id="lastName"
+              type="text"
+              value={profile.last_name}
+              onChange={(e) => handleProfileChange('last_name', e.target.value)}
+            />
+          </div>
+
+          <div className="rn-form-field">
+            <label htmlFor="city">City *</label>
+            <input
+              id="city"
+              type="text"
+              value={profile.city || ''}
+              onChange={(e) => handleProfileChange('city', e.target.value)}
+            />
+          </div>
+
+          <div className="rn-form-field">
+            <label htmlFor="role">Role *</label>
+            <select
+              id="role"
+              value={profile.role || ''}
+              onChange={(e) => handleProfileChange('role', e.target.value || null)}
+            >
+              <option value="">Select a role</option>
+              <option value="student">Student</option>
+              <option value="freelancer">Freelancer</option>
+            </select>
+          </div>
+
+          {profile.role === 'student' && (
+            <>
+              <div className="rn-form-field full">
+                <label htmlFor="college">College *</label>
+                <select
+                  id="college"
+                  value={collegeInfo.college_id || ''}
+                  onChange={(e) => setCollegeInfo({ ...collegeInfo, college_id: e.target.value ? parseInt(e.target.value) : null })}
+                >
+                  <option value="">Select your college</option>
+                  {allColleges.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.city})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="rn-form-field">
+                <label htmlFor="major">Major / Field of Study</label>
+                <input
+                  id="major"
+                  type="text"
+                  placeholder="e.g., Computer Science"
+                  value={collegeInfo.major}
+                  onChange={(e) => setCollegeInfo({ ...collegeInfo, major: e.target.value })}
+                />
+              </div>
+
+              <div className="rn-form-field">
+                <label htmlFor="graduation">Expected Graduation Year</label>
+                <input
+                  id="graduation"
+                  type="number"
+                  min={new Date().getFullYear()}
+                  max={new Date().getFullYear() + 10}
+                  placeholder={String(new Date().getFullYear())}
+                  value={collegeInfo.graduation_year || ''}
+                  onChange={(e) => setCollegeInfo({ ...collegeInfo, graduation_year: e.target.value ? parseInt(e.target.value) : null })}
+                />
+              </div>
+            </>
+          )}
+
+          <div className="rn-form-field full">
+            <label htmlFor="bio">Bio *</label>
+            <textarea
+              id="bio"
+              value={profile.bio}
+              onChange={(e) => handleProfileChange('bio', e.target.value)}
+            />
+          </div>
+
+          <div className="rn-form-field full">
+            <label>Skills *</label>
+            <div className="rn-skill-grid">
+              {allSkills.map((skill) => (
+                <label
+                  key={skill.id}
+                  className={`rn-skill-chip ${selectedSkillIds.includes(skill.id) ? 'is-active' : ''}`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedSkillIds.includes(skill.id)}
+                    onChange={() => handleSkillToggle(skill.id)}
+                  />
+                  <span>{skill.name}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="rn-form-field full">
+            <div className="rn-divider" />
+            <label style={{ marginTop: 8 }}>External Links</label>
+          </div>
+
+          <div className="rn-form-field full">
+            <label htmlFor="linkedinUrl">LinkedIn</label>
+            <input
+              id="linkedinUrl"
+              type="url"
+              placeholder="https://linkedin.com/in/yourprofile"
+              value={profile.linkedin_url || ''}
+              onChange={(e) => handleProfileChange('linkedin_url', e.target.value || undefined)}
+            />
+          </div>
+
+          <div className="rn-form-field full">
+            <label htmlFor="githubUrl">GitHub</label>
+            <input
+              id="githubUrl"
+              type="url"
+              placeholder="https://github.com/yourprofile"
+              value={profile.github_url || ''}
+              onChange={(e) => handleProfileChange('github_url', e.target.value || undefined)}
+            />
+          </div>
+
+          <div className="rn-form-field full">
+            <label htmlFor="portfolioUrl">Portfolio</label>
+            <input
+              id="portfolioUrl"
+              type="url"
+              placeholder="https://yourportfolio.com"
+              value={profile.portfolio_url || ''}
+              onChange={(e) => handleProfileChange('portfolio_url', e.target.value || undefined)}
+            />
+          </div>
+
+          <div className="rn-actions">
+            <button type="submit" disabled={saving} className="rn-primary-btn">
+              {saving ? (
+                <span className="spin"><LoaderIcon size={16} /></span>
+              ) : (
+                <>
+                  <SaveIcon size={16} /> Save Changes
+                </>
+              )}
+            </button>
+            <button type="button" className="rn-secondary-btn" onClick={() => router.back()}>
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </main>
+  )
+}
