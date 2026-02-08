@@ -25,8 +25,7 @@ export function getSupabaseAdmin() {
   if (!serviceRoleKey) {
     throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY')
   }
-  const key: string = serviceRoleKey
-  cachedAdmin = createClient(supabaseUrl, key, {
+  cachedAdmin = createClient(supabaseUrl, serviceRoleKey!, {
     auth: { persistSession: false },
   })
   return cachedAdmin
