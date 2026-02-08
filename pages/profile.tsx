@@ -426,6 +426,7 @@ export default function Profile() {
               type="text"
               value={profile.city || ''}
               onChange={(e) => handleProfileChange('city', e.target.value)}
+              disabled={profile.role === 'student'}
             />
           </div>
 
@@ -456,7 +457,14 @@ export default function Profile() {
                 <select
                   id="college"
                   value={collegeInfo.college_id || ''}
-                  onChange={(e) => setCollegeInfo({ ...collegeInfo, college_id: e.target.value ? parseInt(e.target.value) : null })}
+                  onChange={(e) => {
+                    const selectedId = e.target.value ? parseInt(e.target.value) : null
+                    setCollegeInfo({ ...collegeInfo, college_id: selectedId })
+                    const selectedCollege = allColleges.find((c) => c.id === selectedId)
+                    if (selectedCollege) {
+                      handleProfileChange('city', selectedCollege.city)
+                    }
+                  }}
                 >
                   <option value="">Select your university</option>
                   {filteredColleges.map((c) => (

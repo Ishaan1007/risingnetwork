@@ -45,6 +45,7 @@ export default function ExploreFreelancers() {
   const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([])
   const [filtersOpen, setFiltersOpen] = useState(false)
   const [skillQuery, setSkillQuery] = useState('')
+  const [universityQuery, setUniversityQuery] = useState('')
 
   // Fetch available cities and skills
   useEffect(() => {
@@ -138,9 +139,13 @@ export default function ExploreFreelancers() {
     setPage(0) // Reset to first page
   }
 
-  const filteredUniversities = selectedCity
-    ? allUniversities.filter((u) => u.city === selectedCity)
-    : allUniversities
+  const filteredUniversities = allUniversities
+    .filter((u) => (selectedCity ? u.city === selectedCity : true))
+    .filter((u) => {
+      const q = universityQuery.trim().toLowerCase()
+      if (!q) return true
+      return `${u.name} ${u.city}`.toLowerCase().includes(q)
+    })
 
   const filteredSkills = allSkills.filter((skill) => {
     const q = skillQuery.trim().toLowerCase()
@@ -187,6 +192,14 @@ export default function ExploreFreelancers() {
           <div className="rn-field">
             <label htmlFor="university">University</label>
             <div className="rn-select-wrap">
+              <input
+                className="rn-filter-search"
+                type="text"
+                placeholder={selectedCity ? 'Search university' : 'Select a city first'}
+                value={universityQuery}
+                onChange={(e) => setUniversityQuery(e.target.value)}
+                disabled={!selectedCity}
+              />
               <select
                 id="university"
                 value={selectedUniversityId}
