@@ -22,10 +22,11 @@ let cachedAdmin: ReturnType<typeof createClient> | null = null
 // Admin client for operations that require the service role key (bypasses RLS).
 export function getSupabaseAdmin() {
   if (cachedAdmin) return cachedAdmin
-  if (!serviceRoleKey) {
+  const key = serviceRoleKey
+  if (!key) {
     throw new Error('Missing SUPABASE_SERVICE_ROLE_KEY')
   }
-  cachedAdmin = createClient(supabaseUrl, serviceRoleKey, {
+  cachedAdmin = createClient(supabaseUrl, key, {
     auth: { persistSession: false },
   })
   return cachedAdmin
