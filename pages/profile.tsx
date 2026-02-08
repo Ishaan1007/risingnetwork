@@ -14,7 +14,7 @@ type Profile = {
   linkedin_url?: string
   github_url?: string
   portfolio_url?: string
-  avatar_url?: string
+  avatar_url?: string | null
 }
 
 type Skill = {
