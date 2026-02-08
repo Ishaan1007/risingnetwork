@@ -971,6 +971,10 @@ pre {
   font-size: 13px;
 }
 
+.rn-skill-option span {
+  color: var(--rn-ink);
+}
+
 .rn-skill-option em {
   color: var(--rn-muted);
   font-style: normal;
