@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
+import imageCompression from 'browser-image-compression'
 import { LoaderIcon, SaveIcon } from '../components/Icons'
 import Avatar from '../components/Avatar'
 
@@ -278,13 +279,24 @@ export default function Profile() {
       setMessage({ type: 'error', text: 'Please upload a JPEG, PNG, or WebP image.' })
       return
     }
-    if (file.size > maxBytes) {
+    setUploading(true)
+    setMessage(null)
+    let uploadFile = file
+    try {
+      uploadFile = await imageCompression(file, {
+        maxSizeMB: 0.6,
+        maxWidthOrHeight: 800,
+        useWebWorker: true,
+      })
+    } catch (err) {
+      console.warn('image compression failed, using original file', err)
+    }
+    if (uploadFile.size > maxBytes) {
+      setUploading(false)
       setMessage({ type: 'error', text: 'Image must be 2MB or smaller.' })
       return
     }
-    setUploading(true)
-    setMessage(null)
-    const localUrl = URL.createObjectURL(file)
+    const localUrl = URL.createObjectURL(uploadFile)
     setAvatarPreview((prev) => {
       if (prev && prev.startsWith('blob:')) URL.revokeObjectURL(prev)
       return localUrl
@@ -292,12 +304,12 @@ export default function Profile() {
 
     const attemptUpload = async (retryCreateBucket = true) => {
       try {
-        const ext = file.name.split('.').pop()
+        const ext = (uploadFile.name || file.name).split('.').pop()
         const path = `avatars/${userId}-${Date.now()}.${ext}`
 
         const { error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(path, file, { upsert: true })
+          .upload(path, uploadFile, { upsert: true })
 
         if (uploadError) throw uploadError
 
