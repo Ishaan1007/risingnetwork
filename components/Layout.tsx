@@ -6,6 +6,7 @@ import {
   LogOutIcon,
   ProfileIcon,
   SearchIcon,
+  TeamsIcon,
   UserPlusIcon,
 } from './Icons'
 
@@ -199,6 +200,14 @@ export default function Layout({ children }: LayoutProps) {
               >
                 <UserPlusIcon size={20} />
                 <span>Connections</span>
+              </button>
+              <button
+                className={`rn-nav-btn ${isActive('/teams') ? 'is-active' : ''}`}
+                type="button"
+                onClick={() => router.push('/teams')}
+              >
+                <TeamsIcon size={20} />
+                <span>Teams</span>
               </button>
               <button
                 className={`rn-nav-btn ${isActive('/profile') ? 'is-active' : ''}`}

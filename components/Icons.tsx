@@ -189,3 +189,16 @@ export function BellIcon({ size = 18, color, strokeWidth = 2 }: IconProps) {
     </svg>
   )
 }
+
+export function TeamsIcon({ size = 18, color, strokeWidth = 2 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" style={{ color }} {...base} strokeWidth={strokeWidth}>
+      <circle cx="8" cy="7" r="3" />
+      <path d="M16 7a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+      <circle cx="8" cy="17" r="3" />
+      <path d="M16 17a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />
+      <path d="M5 21v-1a3 3 0 0 1 3-3h0" />
+      <path d="M16 18h0a3 3 0 0 1 3 3v1" />
+    </svg>
+  )
+}
