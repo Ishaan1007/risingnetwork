@@ -38,6 +38,7 @@ export default function ExploreFreelancers() {
   const [totalCount, setTotalCount] = useState(0)
   const [session, setSession] = useState<any>(null)
   const [showSignupModal, setShowSignupModal] = useState(false)
+  const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set())
 
   // Filters
   const [selectedUniversityId, setSelectedUniversityId] = useState<string>('')
@@ -75,6 +76,36 @@ export default function ExploreFreelancers() {
 
     const dismissed = window.localStorage.getItem('rn_signup_dismissed') === '1'
     setShowSignupModal(!dismissed)
+  }, [session])
+
+  useEffect(() => {
+    if (!session?.user) {
+      setConnectedIds(new Set())
+      return
+    }
+
+    let active = true
+    const loadConnections = async () => {
+      const { data: connectionRows } = await supabase
+        .from('connections')
+        .select('requester_id, recipient_id, status')
+        .eq('status', 'accepted')
+        .or(`requester_id.eq.${session.user.id},recipient_id.eq.${session.user.id}`)
+
+      if (!active) return
+      const ids = new Set<string>()
+      ;(connectionRows || []).forEach((c: any) => {
+        const other =
+          c.requester_id === session.user.id ? c.recipient_id : c.requester_id
+        if (other) ids.add(other)
+      })
+      setConnectedIds(ids)
+    }
+
+    loadConnections()
+    return () => {
+      active = false
+    }
   }, [session])
 
   useEffect(() => {
@@ -341,6 +372,15 @@ export default function ExploreFreelancers() {
                     </div>
 
                     <div className="rn-card-actions rn-card-actions-split">
+                      {session?.user?.id === freelancer.id ? (
+                        <button className="rn-secondary-btn" type="button" disabled>
+                          You
+                        </button>
+                      ) : connectedIds.has(freelancer.id) ? (
+                        <button className="rn-secondary-btn" type="button" disabled>
+                          Connected
+                        </button>
+                      ) : (
                       <button
                         className="rn-primary-btn"
                         type="button"
@@ -348,6 +388,7 @@ export default function ExploreFreelancers() {
                       >
                         Connect
                       </button>
+                      )}
                       {freelancer.email && (
                         <button
                           className="rn-secondary-btn"
