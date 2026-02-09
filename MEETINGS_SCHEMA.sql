@@ -1,13 +1,21 @@
 -- Meetings schema for Google Meet integration
 -- Run in Supabase SQL editor
 
--- Drop existing policies first
-drop policy if exists "Meetings read" on meetings;
-drop policy if exists "Meetings insert" on meetings;
-drop policy if exists "Meetings update" on meetings;
-drop policy if exists "Meeting participants read" on meeting_participants;
-drop policy if exists "Meeting participants insert" on meeting_participants;
-drop policy if exists "Meeting participants update" on meeting_participants;
+-- Drop existing policies first (only if tables exist)
+do $$
+begin
+    if exists (select 1 from pg_tables where schemaname = 'public' and tablename = 'meetings') then
+        drop policy if exists "Meetings read" on meetings;
+        drop policy if exists "Meetings insert" on meetings;
+        drop policy if exists "Meetings update" on meetings;
+    end if;
+    
+    if exists (select 1 from pg_tables where schemaname = 'public' and tablename = 'meeting_participants') then
+        drop policy if exists "Meeting participants read" on meeting_participants;
+        drop policy if exists "Meeting participants insert" on meeting_participants;
+        drop policy if exists "Meeting participants update" on meeting_participants;
+    end if;
+end $$;
 
 -- Drop existing tables
 drop table if exists meeting_participants cascade;
