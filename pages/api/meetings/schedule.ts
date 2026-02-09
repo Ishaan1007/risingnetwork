@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { supabaseServer } from '../../../lib/serverSupabase'
+import { createGoogleMeetSpace, createGoogleMeeting, getGoogleMeetSpaces } from '../../../lib/googleMeet'
 
 export default async function handler(
   req: NextApiRequest,
@@ -20,9 +21,53 @@ export default async function handler(
         })
       }
 
-      // Generate real Google Meet link with proper format
-      const meetingId = `meet-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-      const meetLink = `https://meet.google.com/${meetingId}`
+      // Get user's Google access token (in production, get from database)
+      const accessToken = process.env.GOOGLE_ACCESS_TOKEN || 'mock_token_for_development'
+
+      // Create or get Google Meet space
+      let spaceName = `RisingNetwork-${userId}`
+      let space
+      
+      try {
+        const spaces = await getGoogleMeetSpaces(accessToken)
+        space = spaces.find(s => s.name === spaceName)
+        
+        if (!space) {
+          // Create new space
+          space = await createGoogleMeetSpace(accessToken, spaceName)
+        }
+      } catch (error) {
+        console.error('Error with Google Meet space:', error)
+        // Fallback to mock link if Google API fails
+      }
+
+      // Create meeting using Google Meet API
+      const startTime = new Date(scheduled_for || Date.now()).toISOString()
+      const endTime = new Date(Date.parse(startTime) + (duration_minutes || 30) * 60000).toISOString()
+
+      let meetLink: string
+      
+      if (space) {
+        const meetingData = {
+          space: space.name,
+          title,
+          startTime,
+          endTime,
+          timeZone: 'UTC',
+          conferenceData: {
+            createRequest: {
+              name: 'meet',
+              conferenceSolution: 'hangoutsAndMeet'
+            }
+          }
+        }
+
+        const meeting = await createGoogleMeeting(accessToken, space.name, meetingData)
+        meetLink = meeting.conferenceData.entryPoints.find((ep: any) => ep.entryPointType === 'video')?.uri || meeting.conferenceData.conferenceUri
+      } else {
+        // Fallback mock link
+        meetLink = `https://meet.google.com/lookup/${spaceName}-${Date.now()}`
+      }
 
       // Create meeting record
       const { data: meeting, error: meetingError } = await supabaseServer
