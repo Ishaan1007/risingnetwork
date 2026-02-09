@@ -384,6 +384,12 @@ export default function Profile() {
       <div className="rn-profile-card">
         <h1 className="rn-profile-title">Edit Profile</h1>
 
+        {router.query.reason === 'name' && (
+          <div className="rn-message error">
+            Please enter your first and last name to continue.
+          </div>
+        )}
+
         {message && (
           <div className={`rn-message ${message.type}`}>
             {message.text}
@@ -422,7 +428,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="rn-form">
+        <form onSubmit={handleSubmit} className="rn-form" id="profile-form">
           <div className="rn-form-field">
             <label htmlFor="firstName">First Name *</label>
             <input
@@ -666,6 +672,30 @@ export default function Profile() {
             </button>
           </div>
         </form>
+
+        <div className="rn-mobile-actions">
+          <button
+            type="submit"
+            form="profile-form"
+            disabled={saving}
+            className="rn-primary-btn"
+          >
+            {saving ? (
+              <span className="spin"><LoaderIcon size={16} /></span>
+            ) : (
+              <>
+                <SaveIcon size={16} /> Save Changes
+              </>
+            )}
+          </button>
+          <button
+            type="button"
+            className="rn-secondary-btn"
+            onClick={() => router.back()}
+          >
+            Cancel
+          </button>
+        </div>
       </div>
     </main>
   )

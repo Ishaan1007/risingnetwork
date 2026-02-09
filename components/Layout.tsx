@@ -109,7 +109,7 @@ export default function Layout({ children }: LayoutProps) {
     if (!session?.user) return
     if (!profileIncomplete) return
     if (router.pathname === '/profile') return
-    router.push('/profile')
+    router.push('/profile?reason=name')
   }, [session, profileIncomplete, router])
 
   const handleSearch = () => {
