@@ -203,3 +203,16 @@ export function TeamsIcon({ size = 18, color, strokeWidth = 2 }: IconProps) {
     </svg>
   )
 }
+
+export function GoogleMeetIcon({ size = 18, color, strokeWidth = 2 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" style={{ color }} {...base} strokeWidth={strokeWidth}>
+      <rect x="2" y="2" width="20" height="20" rx="4" ry="4" />
+      <path d="M8 12h8" />
+      <circle cx="6" cy="12" r="2" fill="currentColor" />
+      <circle cx="18" cy="12" r="2" fill="currentColor" />
+      <path d="M12 6v12" />
+      <path d="M9 9h6v6h-6z" fill="currentColor" />
+    </svg>
+  )
+}
