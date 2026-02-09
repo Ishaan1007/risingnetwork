@@ -775,6 +775,15 @@ pre {
   gap: 8px;
   font-size: 13px;
   color: var(--rn-muted);
+  max-width: 100%;
+}
+
+.rn-card-meta span {
+  display: block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .rn-badge {

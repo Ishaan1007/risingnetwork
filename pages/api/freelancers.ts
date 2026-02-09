@@ -45,6 +45,8 @@ export default async function handler(
         ),
         college_info (
           college_id,
+          major,
+          semester,
           colleges (
             id,
             name,

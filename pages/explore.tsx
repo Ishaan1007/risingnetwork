@@ -23,7 +23,7 @@ type Person = {
   portfolio_url?: string
   avatar_url?: string
   skills: Skill[]
-  college_info?: Array<{ college_id: number; colleges: { id: number; name: string; city: string } }>
+  college_info?: Array<{ college_id: number; major?: string | null; semester?: number | null; colleges: { id: number; name: string; city: string } }>
 }
 
 const LIMIT = 12
@@ -378,9 +378,19 @@ export default function ExploreFreelancers() {
                         </h3>
                         <div className="rn-card-meta">
                           <span>
-                            {freelancer.college_info?.[0]?.colleges?.name ||
-                              freelancer.city ||
-                              'Independent'}
+                            {(() => {
+                              const info = freelancer.college_info?.[0]
+                              const sem = info?.semester
+                              const major = info?.major
+                              if (sem || major) {
+                                const semText = sem ? `Sem-${sem}` : 'Semester'
+                                const majorText = major ? major : 'Field'
+                                return `${semText} | ${majorText}`
+                              }
+                              return freelancer.college_info?.[0]?.colleges?.name ||
+                                freelancer.city ||
+                                'Independent'
+                            })()}
                           </span>
                         </div>
                       </div>

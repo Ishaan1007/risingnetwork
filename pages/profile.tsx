@@ -279,6 +279,11 @@ export default function Profile() {
       setMessage({ type: 'error', text: 'Please upload a JPEG, PNG, or WebP image.' })
       return
     }
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+    if (!cloudName) {
+      setMessage({ type: 'error', text: 'Cloudinary is not configured.' })
+      return
+    }
     setUploading(true)
     setMessage(null)
     let uploadFile = file
@@ -302,19 +307,37 @@ export default function Profile() {
       return localUrl
     })
 
-    const attemptUpload = async (retryCreateBucket = true) => {
+    const attemptUpload = async () => {
       try {
-        const ext = (uploadFile.name || file.name).split('.').pop()
-        const path = `avatars/${userId}-${Date.now()}.${ext}`
+        const publicId = `${userId}-${Date.now()}`
+        const signRes = await fetch('/api/cloudinary/sign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ public_id: publicId }),
+        })
+        const signData = await signRes.json()
+        if (!signRes.ok) {
+          throw new Error(signData?.error || 'Failed to sign upload')
+        }
 
-        const { error: uploadError } = await supabase.storage
-          .from('avatars')
-          .upload(path, uploadFile, { upsert: true })
+        const form = new FormData()
+        form.append('file', uploadFile)
+        form.append('api_key', signData.apiKey)
+        form.append('timestamp', String(signData.timestamp))
+        form.append('signature', signData.signature)
+        form.append('folder', signData.folder)
+        form.append('public_id', signData.publicId)
 
-        if (uploadError) throw uploadError
+        const uploadRes = await fetch(
+          `https://api.cloudinary.com/v1_1/${signData.cloudName}/image/upload`,
+          { method: 'POST', body: form }
+        )
+        const uploadData = await uploadRes.json()
+        if (!uploadRes.ok) {
+          throw new Error(uploadData?.error?.message || 'Upload failed')
+        }
 
-        const { data: urlData } = await supabase.storage.from('avatars').getPublicUrl(path)
-        const publicUrl = urlData?.publicUrl || null
+        const publicUrl = uploadData.secure_url || uploadData.url || null
 
         // Update profile immediately with avatar_url
         const { error: profileErr } = await supabase
@@ -334,27 +357,12 @@ export default function Profile() {
         setTimeout(() => setMessage(null), 3000)
       } catch (err: any) {
         console.error('upload error', err)
-        const msg = String(err?.message || '').toLowerCase()
-        // If bucket not found, attempt to create it via server API and retry once
-        if (retryCreateBucket && (msg.includes('bucket') && msg.includes('not') || msg.includes('does not exist'))) {
-          try {
-            await fetch('/api/storage/create-avatar-bucket', { method: 'POST' })
-            // retry upload once
-            await attemptUpload(false)
-            return
-          } catch (createErr) {
-            console.error('bucket create attempt failed', createErr)
-            setMessage({ type: 'error', text: 'Failed to create storage bucket for avatars.' })
-            return
-          }
-        }
-
         setMessage({ type: 'error', text: err.message || 'Upload failed' })
       }
     }
 
     try {
-      await attemptUpload(true)
+      await attemptUpload()
     } finally {
       setUploading(false)
     }
