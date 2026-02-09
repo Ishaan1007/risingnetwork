@@ -421,6 +421,130 @@ pre {
   font-size: 13px;
 }
 
+.rn-project-cta {
+  border: 1px solid #dbe7ff;
+  border-radius: 18px;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  background: linear-gradient(120deg, #ffffff 0%, #edf4ff 100%);
+  box-shadow: var(--rn-shadow);
+  text-align: left;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.rn-project-cta:hover {
+  border-color: #c7d8ff;
+  box-shadow: 0 22px 40px rgba(15, 23, 42, 0.12);
+  transform: translateY(-1px);
+}
+
+.rn-project-cta h3 {
+  font-size: 15px;
+  margin-bottom: 6px;
+  font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif;
+}
+
+.rn-project-cta p {
+  color: var(--rn-muted);
+  font-size: 13px;
+}
+
+.rn-project-cta-btn {
+  background: var(--rn-blue);
+  color: white;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.24);
+}
+
+.rn-project-cta.is-locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: var(--rn-shadow);
+}
+
+.rn-project-cta.is-locked:hover {
+  transform: none;
+  box-shadow: var(--rn-shadow);
+}
+
+.rn-project-cta.is-locked .rn-project-cta-btn {
+  background: #cbd5f5;
+  color: #64748b;
+  box-shadow: none;
+}
+
+.rn-projects-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.rn-projects-header h1 {
+  font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif;
+  font-size: 24px;
+  margin-bottom: 6px;
+}
+
+.rn-projects-header p {
+  color: var(--rn-muted);
+  font-size: 14px;
+}
+
+.rn-projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.rn-project-card {
+  background: var(--rn-surface);
+  border: 1px solid var(--rn-line);
+  border-radius: 18px;
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  box-shadow: var(--rn-shadow);
+}
+
+.rn-project-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--rn-muted);
+}
+
+.rn-project-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.rn-project-form {
+  margin-bottom: 18px;
+}
+
+.rn-request-card {
+  border: 1px solid var(--rn-line);
+  border-radius: 16px;
+  padding: 16px;
+  background: #fbfdff;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .rn-modal-backdrop {
   position: fixed;
   inset: 0;

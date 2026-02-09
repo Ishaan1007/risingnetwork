@@ -342,6 +342,21 @@ export default function ExploreFreelancers() {
             </div>
           )}
 
+          <button
+            type="button"
+            className={`rn-project-cta ${!session ? 'is-locked' : ''}`}
+            disabled={!session}
+            onClick={() => {
+              if (session) router.push('/projects')
+            }}
+          >
+            <div>
+              <h3>Work on real student projects</h3>
+              <p>Browse open projects and request to join teams that match your skills.</p>
+            </div>
+            <span className="rn-project-cta-btn">View Projects</span>
+          </button>
+
           {loading ? (
             <div role="status" aria-label="Loading" className="rn-loading">
               <span className="spin">
