@@ -1189,10 +1189,74 @@ pre {
   margin-bottom: 10px;
 }
 
+.rn-chat-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.rn-chat-group-title .rn-badge {
+  background: #e7efff;
+  color: var(--rn-blue);
+  font-weight: 700;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+
 .rn-chat-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+.rn-requests {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rn-request-item {
+  border: 1px solid var(--rn-line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fbfdff;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rn-request-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rn-request-meta strong {
+  font-size: 13px;
+}
+
+.rn-request-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.rn-request-btn {
+  border: 1px solid var(--rn-line);
+  background: #ffffff;
+  color: var(--rn-ink);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rn-request-btn.is-accept {
+  background: var(--rn-blue);
+  color: white;
+  border-color: transparent;
 }
 
 .rn-chat-item {

@@ -22,6 +22,27 @@ type ChatTarget = {
   teamId?: string | number
 }
 
+type Invitation = {
+  id: number
+  status: string
+  invited_at: string
+  teams: {
+    id: number
+    name: string
+    description: string
+    colleges: {
+      name: string
+    }
+  }
+}
+
+type ConnectionRequest = {
+  id: string
+  requester_id: string
+  recipient_id: string
+  status: 'pending' | 'accepted' | 'rejected'
+}
+
 type Message = {
   id: string
   sender_id: string | null
@@ -63,6 +84,10 @@ export default function ChatPage() {
   const [sending, setSending] = useState(false)
   const [resolvingConversation, setResolvingConversation] = useState(false)
   const [profiles, setProfiles] = useState<Record<string, ProfileMini>>({})
+  const [invites, setInvites] = useState<Invitation[]>([])
+  const [incomingRequests, setIncomingRequests] = useState<ConnectionRequest[]>([])
+  const [requestProfiles, setRequestProfiles] = useState<Record<string, ProfileMini>>({})
+  const [requestsLoading, setRequestsLoading] = useState(false)
   const messagesRef = useRef<HTMLDivElement | null>(null)
   const pollsRef = useRef<Record<string, Poll>>({})
   const socketRef = useRef<any>(null)
@@ -175,6 +200,66 @@ export default function ChatPage() {
     }
 
     loadTargets()
+  }, [session])
+
+  useEffect(() => {
+    if (!session?.user) return
+
+    const loadRequests = async () => {
+      setRequestsLoading(true)
+      try {
+        const response = await fetch(`/api/invitations?user_id=${session.user.id}`)
+        const result = await response.json()
+        if (response.ok) {
+          setInvites(result.invitations || [])
+        }
+
+        const { data: connections } = await supabase
+          .from('connections')
+          .select('id, requester_id, recipient_id, status')
+          .eq('recipient_id', session.user.id)
+          .eq('status', 'pending')
+
+        const incoming = (connections || []) as ConnectionRequest[]
+        setIncomingRequests(incoming)
+
+        const requesterIds = Array.from(new Set(incoming.map((c) => c.requester_id)))
+        if (requesterIds.length > 0) {
+          const { data: requestProfileData } = await supabase
+            .from('profiles')
+            .select('id, first_name, last_name, avatar_url, city')
+            .in('id', requesterIds)
+          const map: Record<string, ProfileMini> = {}
+          ;(requestProfileData || []).forEach((p: any) => {
+            map[p.id] = p
+          })
+          setRequestProfiles(map)
+        } else {
+          setRequestProfiles({})
+        }
+      } finally {
+        setRequestsLoading(false)
+      }
+    }
+
+    loadRequests()
+  }, [session])
+
+  useEffect(() => {
+    if (!session?.user || !socketRef.current) return
+    const socket = socketRef.current
+    const handleInvite = () => {
+      fetch(`/api/invitations?user_id=${session.user.id}`)
+        .then((res) => res.json())
+        .then((result) => {
+          if (result?.invitations) setInvites(result.invitations)
+        })
+        .catch(() => {})
+    }
+    socket.on('invite:received', handleInvite)
+    return () => {
+      socket.off('invite:received', handleInvite)
+    }
   }, [session])
 
   const activeTarget = useMemo(
@@ -598,6 +683,29 @@ export default function ChatPage() {
     refreshPoll(pollId)
   }
 
+  const handleInviteResponse = async (invitationId: number, action: 'accept' | 'decline') => {
+    try {
+      const response = await fetch('/api/invitations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          team_member_id: invitationId,
+          action,
+        }),
+      })
+      if (response.ok) {
+        setInvites((prev) => prev.filter((i) => i.id !== invitationId))
+      }
+    } catch {}
+  }
+
+  const handleConnectionResponse = async (id: string, status: 'accepted' | 'rejected') => {
+    try {
+      await supabase.from('connections').update({ status }).eq('id', id)
+      setIncomingRequests((prev) => prev.filter((c) => c.id !== id))
+    } catch {}
+  }
+
   if (loading) {
     return (
       <main className="rn-shell">
@@ -623,7 +731,10 @@ export default function ChatPage() {
             <input type="text" placeholder="Search conversations..." />
           </div>
           <div className="rn-chat-group">
-            <h3>Direct</h3>
+            <div className="rn-chat-group-title">
+              <h3>Direct</h3>
+              <span className="rn-badge">{targets.filter((t) => t.type === 'direct').length}</span>
+            </div>
             <div className="rn-chat-list">
               {targets.filter((t) => t.type === 'direct').length === 0 ? (
                 <p className="rn-muted">No connected users yet.</p>
@@ -651,7 +762,10 @@ export default function ChatPage() {
             </div>
           </div>
           <div className="rn-chat-group">
-            <h3>Teams</h3>
+            <div className="rn-chat-group-title">
+              <h3>Teams</h3>
+              <span className="rn-badge">{targets.filter((t) => t.type === 'team').length}</span>
+            </div>
             <div className="rn-chat-list">
               {targets.filter((t) => t.type === 'team').length === 0 ? (
                 <p className="rn-muted">Join a team to start chatting.</p>
@@ -672,6 +786,76 @@ export default function ChatPage() {
                       </span>
                     </button>
                   ))
+              )}
+            </div>
+          </div>
+          <div className="rn-chat-group">
+            <div className="rn-chat-group-title">
+              <h3>Requests</h3>
+              <span className="rn-badge">{invites.length + incomingRequests.length}</span>
+            </div>
+            <div className="rn-requests">
+              {requestsLoading ? (
+                <p className="rn-muted">Loading requests...</p>
+              ) : invites.length === 0 && incomingRequests.length === 0 ? (
+                <p className="rn-muted">No pending requests.</p>
+              ) : (
+                <>
+                  {invites.map((invite) => (
+                    <div key={`invite-${invite.id}`} className="rn-request-item">
+                      <div className="rn-request-meta">
+                        <strong>{invite.teams.name}</strong>
+                        <span className="rn-muted">Team invite</span>
+                      </div>
+                      <div className="rn-request-actions">
+                        <button
+                          className="rn-request-btn is-accept"
+                          type="button"
+                          onClick={() => handleInviteResponse(invite.id, 'accept')}
+                        >
+                          Accept
+                        </button>
+                        <button
+                          className="rn-request-btn"
+                          type="button"
+                          onClick={() => handleInviteResponse(invite.id, 'decline')}
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                  {incomingRequests.map((req) => {
+                    const profile = requestProfiles[req.requester_id]
+                    const name = profile
+                      ? `${profile.first_name} ${profile.last_name}`.trim()
+                      : 'Connection request'
+                    return (
+                      <div key={`conn-${req.id}`} className="rn-request-item">
+                        <div className="rn-request-meta">
+                          <strong>{name}</strong>
+                          <span className="rn-muted">Connection request</span>
+                        </div>
+                        <div className="rn-request-actions">
+                          <button
+                            className="rn-request-btn is-accept"
+                            type="button"
+                            onClick={() => handleConnectionResponse(req.id, 'accepted')}
+                          >
+                            Accept
+                          </button>
+                          <button
+                            className="rn-request-btn"
+                            type="button"
+                            onClick={() => handleConnectionResponse(req.id, 'rejected')}
+                          >
+                            Decline
+                          </button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </>
               )}
             </div>
           </div>
