@@ -1319,6 +1319,7 @@ pre {
   padding: 18px 20px;
   border-bottom: 1px solid var(--rn-line);
   background: #f9fbff;
+  gap: 12px;
 }
 
 .rn-chat-thread-header h2 {
@@ -1433,6 +1434,22 @@ pre {
   padding: 16px 20px;
   border-top: 1px solid var(--rn-line);
   background: #f9fbff;
+}
+
+.rn-chat-back {
+  border: 1px solid var(--rn-line);
+  background: #ffffff;
+  color: var(--rn-ink);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rn-chat-back:hover {
+  background: #eef4ff;
+  color: #1d4ed8;
 }
 
 .rn-chat-composer input {
@@ -1837,6 +1854,12 @@ pre {
   }
   .rn-chat-layout {
     grid-template-columns: 1fr;
+  }
+  .rn-chat-layout.is-thread-open .rn-chat-sidebar {
+    display: none;
+  }
+  .rn-chat-layout.is-thread-open .rn-chat-thread {
+    display: flex;
   }
 }
 

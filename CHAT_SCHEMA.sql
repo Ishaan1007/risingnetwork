@@ -73,6 +73,8 @@ create or replace function is_connected(user_a uuid, user_b uuid)
 returns boolean
 language sql
 stable
+security definer
+set search_path = public
 as $$
   select exists (
     select 1
@@ -89,6 +91,8 @@ create or replace function is_team_member(p_team_id int8, p_user_id uuid)
 returns boolean
 language sql
 stable
+security definer
+set search_path = public
 as $$
   select exists (
     select 1
@@ -103,6 +107,8 @@ create or replace function can_access_conversation(p_conversation_id uuid, p_use
 returns boolean
 language sql
 stable
+security definer
+set search_path = public
 as $$
   select exists (
     select 1

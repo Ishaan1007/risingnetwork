@@ -71,6 +71,8 @@ export default function ChatPage() {
   const router = useRouter()
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [isMobile, setIsMobile] = useState(false)
+  const [threadOpen, setThreadOpen] = useState(false)
   const [targets, setTargets] = useState<ChatTarget[]>([])
   const [activeTargetId, setActiveTargetId] = useState<string | null>(null)
   const [conversationId, setConversationId] = useState<string | null>(null)
@@ -91,6 +93,14 @@ export default function ChatPage() {
   const messagesRef = useRef<HTMLDivElement | null>(null)
   const pollsRef = useRef<Record<string, Poll>>({})
   const socketRef = useRef<any>(null)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const update = () => setIsMobile(window.innerWidth <= 900)
+    update()
+    window.addEventListener('resize', update)
+    return () => window.removeEventListener('resize', update)
+  }, [])
 
   useEffect(() => {
     const init = async () => {
@@ -193,14 +203,20 @@ export default function ChatPage() {
       const merged = [...directTargets, ...teamTargets]
       setTargets(merged)
       setProfiles(profileMap)
-      if (merged.length > 0 && !activeTargetId) {
+      if (merged.length > 0 && !activeTargetId && !isMobile) {
         setActiveTargetId(merged[0].id)
       }
       setLoading(false)
     }
 
     loadTargets()
-  }, [session])
+  }, [session, isMobile])
+
+  useEffect(() => {
+    if (!isMobile) {
+      setThreadOpen(false)
+    }
+  }, [isMobile])
 
   useEffect(() => {
     if (!session?.user) return
@@ -602,7 +618,9 @@ export default function ChatPage() {
       activeConversationId = await resolveConversationId()
     }
     if (!activeConversationId) {
-      setChatError('Chat not ready yet. Try again in a moment.')
+      if (!chatError) {
+        setChatError('Chat not ready yet. Try again in a moment.')
+      }
       return
     }
     const value = text.trim()
@@ -720,7 +738,7 @@ export default function ChatPage() {
 
   return (
     <main className="rn-chat-shell">
-      <div className="rn-chat-layout">
+      <div className={`rn-chat-layout ${threadOpen ? 'is-thread-open' : ''}`}>
         <aside className="rn-panel rn-chat-sidebar">
           <div className="rn-chat-sidebar-header">
             <h2>Messages</h2>
@@ -748,7 +766,10 @@ export default function ChatPage() {
                         key={t.id}
                         type="button"
                         className={`rn-chat-item ${t.id === activeTargetId ? 'is-active' : ''}`}
-                        onClick={() => setActiveTargetId(t.id)}
+                        onClick={() => {
+                          setActiveTargetId(t.id)
+                          if (isMobile) setThreadOpen(true)
+                        }}
                       >
                         <Avatar src={profile?.avatar_url} size={36} />
                         <span>
@@ -777,7 +798,10 @@ export default function ChatPage() {
                       key={t.id}
                       type="button"
                       className={`rn-chat-item ${t.id === activeTargetId ? 'is-active' : ''}`}
-                      onClick={() => setActiveTargetId(t.id)}
+                      onClick={() => {
+                        setActiveTargetId(t.id)
+                        if (isMobile) setThreadOpen(true)
+                      }}
                     >
                       <span className="rn-chat-initial">{t.name.slice(0, 1).toUpperCase()}</span>
                       <span>
@@ -871,6 +895,15 @@ export default function ChatPage() {
           ) : (
             <>
               <header className="rn-chat-thread-header">
+                {isMobile && (
+                  <button
+                    type="button"
+                    className="rn-chat-back"
+                    onClick={() => setThreadOpen(false)}
+                  >
+                    Back
+                  </button>
+                )}
                 <div>
                   <h2>{activeTarget.name}</h2>
                   <p className="rn-muted">{activeTarget.subtitle}</p>
