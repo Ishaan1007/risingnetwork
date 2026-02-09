@@ -251,7 +251,7 @@ export default function PublicProfile() {
                     </>
                   ) : (
                     <button
-                      className="rn-primary-btn"
+                      className="rn-connect-btn"
                       type="button"
                       onClick={handleConnect}
                       disabled={connectLoading || connectionStatus === 'pending' || connectionStatus === 'connected'}

@@ -397,7 +397,7 @@ export default function ExploreFreelancers() {
                         </button>
                       ) : (
                       <button
-                        className="rn-primary-btn"
+                        className="rn-connect-btn"
                         type="button"
                         onClick={() => router.push(`/profiles/${freelancer.id}`)}
                       >

@@ -128,6 +128,13 @@ export default function Layout({ children }: LayoutProps) {
     }
   }, [session])
 
+  useEffect(() => {
+    if (!session?.user) return
+    if (!profileIncomplete) return
+    if (router.pathname === '/profile') return
+    router.push('/profile')
+  }, [session, profileIncomplete, router])
+
   const handleSearch = () => {
     const val = searchInput.trim()
     if (val) {
