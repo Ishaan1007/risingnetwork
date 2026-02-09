@@ -445,6 +445,11 @@ pre {
   font-size: 15px;
   margin-bottom: 6px;
   font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif;
+  color: var(--rn-ink);
+}
+
+.rn-project-cta:hover h3 {
+  color: var(--rn-blue);
 }
 
 .rn-project-cta p {
