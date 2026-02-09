@@ -1155,10 +1155,18 @@ pre {
 }
 
 .rn-chat-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 10px 12px;
   border: 1px solid var(--rn-line);
   border-radius: 12px;
   background: #f8fafc;
+  color: var(--rn-muted);
+}
+
+.rn-chat-search svg {
+  flex-shrink: 0;
 }
 
 .rn-chat-search input {

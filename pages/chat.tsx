@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
 import Avatar from '../components/Avatar'
-import { LoaderIcon } from '../components/Icons'
+import { LoaderIcon, SearchIcon } from '../components/Icons'
 import { getSocket } from '../lib/socketClient'
 
 type ProfileMini = {
@@ -619,6 +619,7 @@ export default function ChatPage() {
             <span>{targets.length} active</span>
           </div>
           <div className="rn-chat-search">
+            <SearchIcon size={16} />
             <input type="text" placeholder="Search conversations..." />
           </div>
           <div className="rn-chat-group">
