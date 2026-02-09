@@ -33,6 +33,7 @@ type CollegeInfo = {
   college_id: number | null
   major: string
   graduation_year: number | null
+  semester: number | null
 }
 
 export default function Profile() {
@@ -41,7 +42,12 @@ export default function Profile() {
   const [allSkills, setAllSkills] = useState<Skill[]>([])
   const [allColleges, setAllColleges] = useState<College[]>([])
   const [selectedSkillIds, setSelectedSkillIds] = useState<number[]>([])
-  const [collegeInfo, setCollegeInfo] = useState<CollegeInfo>({ college_id: null, major: '', graduation_year: null })
+  const [collegeInfo, setCollegeInfo] = useState<CollegeInfo>({
+    college_id: null,
+    major: '',
+    graduation_year: null,
+    semester: null,
+  })
   const [universityQuery, setUniversityQuery] = useState('')
   const [skillQuery, setSkillQuery] = useState('')
   const [skillsOpen, setSkillsOpen] = useState(false)
@@ -108,7 +114,7 @@ export default function Profile() {
         // Fetch user's college info (if student)
         const { data: collegeData } = await supabase
           .from('college_info')
-          .select('college_id, major, graduation_year')
+          .select('college_id, major, graduation_year, semester')
           .eq('user_id', userId)
           .single()
 
@@ -117,6 +123,7 @@ export default function Profile() {
             college_id: collegeData.college_id,
             major: collegeData.major || '',
             graduation_year: collegeData.graduation_year,
+            semester: collegeData.semester ?? null,
           })
         }
 
@@ -175,6 +182,10 @@ export default function Profile() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!profile || !userId) return
+    if (!profile.first_name?.trim() || !profile.last_name?.trim()) {
+      setMessage({ type: 'error', text: 'First name and last name are required.' })
+      return
+    }
 
     setSaving(true)
     setMessage(null)
@@ -236,6 +247,7 @@ export default function Profile() {
             college_id: collegeInfo.college_id,
             major: collegeInfo.major || null,
             graduation_year: collegeInfo.graduation_year || null,
+            semester: collegeInfo.semester || null,
           }, { onConflict: 'user_id' })
 
         if (collegeError) {
@@ -509,6 +521,30 @@ export default function Profile() {
                   value={collegeInfo.graduation_year || ''}
                   onChange={(e) => setCollegeInfo({ ...collegeInfo, graduation_year: e.target.value ? parseInt(e.target.value) : null })}
                 />
+              </div>
+
+              <div className="rn-form-field">
+                <label htmlFor="semester">Semester</label>
+                <select
+                  id="semester"
+                  value={collegeInfo.semester || ''}
+                  onChange={(e) =>
+                    setCollegeInfo({
+                      ...collegeInfo,
+                      semester: e.target.value ? parseInt(e.target.value) : null,
+                    })
+                  }
+                >
+                  <option value="">Select semester</option>
+                  {Array.from({ length: 8 }).map((_, idx) => {
+                    const value = idx + 1
+                    return (
+                      <option key={`semester-${value}`} value={value}>
+                        Semester {value}
+                      </option>
+                    )
+                  })}
+                </select>
               </div>
             </>
           )}

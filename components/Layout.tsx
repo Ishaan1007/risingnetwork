@@ -89,31 +89,8 @@ export default function Layout({ children }: LayoutProps) {
         }
 
         let incomplete = false
-
-        if (!profileData.avatar_url) incomplete = true
-        if (!profileData.bio || profileData.bio.trim() === '') incomplete = true
-        if (!profileData.linkedin_url) incomplete = true
-        if (!profileData.github_url) incomplete = true
-        if (!profileData.portfolio_url) incomplete = true
-        if (!profileData.role) incomplete = true
-        if (!profileData.city || profileData.city.trim() === '') incomplete = true
-
-        const { data: skillsData } = await supabase
-          .from('user_skills')
-          .select('skill_id')
-          .eq('user_id', session.user.id)
-
-        if (!skillsData || skillsData.length === 0) incomplete = true
-
-        if (profileData.role === 'student') {
-          const { data: collegeData } = await supabase
-            .from('college_info')
-            .select('college_id')
-            .eq('user_id', session.user.id)
-            .single()
-
-          if (!collegeData?.college_id) incomplete = true
-        }
+        if (!profileData.first_name || profileData.first_name.trim() === '') incomplete = true
+        if (!profileData.last_name || profileData.last_name.trim() === '') incomplete = true
 
         if (isMounted) setProfileIncomplete(incomplete)
       } catch (error) {
