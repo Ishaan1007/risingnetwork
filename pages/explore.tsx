@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
 import Avatar from '../components/Avatar'
-import { ChevronLeftIcon, ChevronRightIcon, LoaderIcon } from '../components/Icons'
+import { ChevronLeftIcon, ChevronRightIcon, LoaderIcon, UserPlusIcon, XIcon } from '../components/Icons'
 
 type Skill = {
   id: number
@@ -37,6 +37,7 @@ export default function ExploreFreelancers() {
   const [page, setPage] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
   const [session, setSession] = useState<any>(null)
+  const [showSignupModal, setShowSignupModal] = useState(false)
 
   // Filters
   const [selectedUniversityId, setSelectedUniversityId] = useState<string>('')
@@ -63,6 +64,18 @@ export default function ExploreFreelancers() {
 
     return () => subscription?.unsubscribe()
   }, [])
+
+  useEffect(() => {
+    if (session?.user) {
+      setShowSignupModal(false)
+      return
+    }
+
+    if (typeof window === 'undefined') return
+
+    const dismissed = window.localStorage.getItem('rn_signup_dismissed') === '1'
+    setShowSignupModal(!dismissed)
+  }, [session])
 
   useEffect(() => {
     const init = async () => {
@@ -160,8 +173,44 @@ export default function ExploreFreelancers() {
     if (error) console.error('OAuth error', error)
   }
 
+  const handleSignupDismiss = () => {
+    setShowSignupModal(false)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('rn_signup_dismissed', '1')
+    }
+  }
+
   return (
     <main className="rn-shell">
+      {!session && showSignupModal && (
+        <div className="rn-modal-backdrop" role="dialog" aria-modal="true">
+          <div className="rn-modal">
+            <button className="rn-modal-close" type="button" onClick={handleSignupDismiss} aria-label="Close">
+              <XIcon size={16} />
+            </button>
+            <div className="rn-modal-header">
+              <span className="rn-modal-icon" aria-hidden="true">
+                <UserPlusIcon size={20} />
+              </span>
+              <h3>Sign up to explore RisingNetwork</h3>
+            </div>
+            <p>
+              Create your profile to unlock full access to people, teams, and personalized matches.
+            </p>
+            <div className="rn-modal-actions">
+              <button className="rn-primary-btn" type="button" onClick={handleSignIn}>
+                Sign up with Google
+              </button>
+              <button className="rn-secondary-btn" type="button" onClick={handleSignIn}>
+                Log in with Google
+              </button>
+              <button className="rn-secondary-btn" type="button" onClick={handleSignupDismiss}>
+                Maybe later
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="rn-mobile-filters">
         <button
           type="button"
@@ -250,14 +299,14 @@ export default function ExploreFreelancers() {
             )}
           </header>
 
-          {!session && (
+          {!session && !showSignupModal && (
             <div className="rn-login-card">
               <div>
-                <h3>Sign in to unlock teams and personalized matches</h3>
-                <p>Connect your Google account to save your profile, join teams, and get recommendations.</p>
+                <h3>Sign up to explore people</h3>
+                <p>Create your profile to connect, join teams, and unlock personalized matches.</p>
               </div>
               <button className="rn-primary-btn" type="button" onClick={handleSignIn}>
-                Sign in with Google
+                Sign up with Google
               </button>
             </div>
           )}
@@ -272,7 +321,7 @@ export default function ExploreFreelancers() {
             <div className="rn-empty">No professionals match your filters yet.</div>
           ) : (
             <>
-              <div className="rn-cards">
+              <div className={`rn-cards ${!session ? 'is-locked' : ''}`}>
                 {freelancers.map((freelancer) => (
                   <article key={freelancer.id} className="rn-card">
                     <div className="rn-card-head">

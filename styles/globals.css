@@ -421,6 +421,89 @@ pre {
   font-size: 13px;
 }
 
+.rn-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 80;
+  animation: rn-fade-in 0.18s ease-out;
+}
+
+.rn-modal {
+  background: var(--rn-surface);
+  border: 1px solid var(--rn-line);
+  border-radius: 20px;
+  padding: 24px;
+  width: min(520px, 100%);
+  box-shadow: 0 30px 80px rgba(15, 23, 42, 0.25);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  animation: rn-modal-in 0.22s ease-out;
+}
+
+.rn-modal-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rn-modal-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--rn-blue-soft);
+  color: var(--rn-blue);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rn-modal h3 {
+  font-size: 18px;
+  font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif;
+}
+
+.rn-modal p {
+  color: var(--rn-muted);
+  font-size: 14px;
+}
+
+.rn-modal-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.rn-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid var(--rn-line);
+  background: #f8fafc;
+  color: var(--rn-muted);
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rn-modal-close:hover {
+  background: #eef4ff;
+  color: var(--rn-blue);
+}
+
 .rn-results-header {
   display: flex;
   align-items: center;
@@ -478,6 +561,54 @@ pre {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 18px;
+}
+
+.rn-cards.is-locked {
+  position: relative;
+  pointer-events: none;
+}
+
+.rn-cards.is-locked .rn-card {
+  opacity: 0.32;
+  filter: blur(0.6px) grayscale(0.35);
+  transform: translateY(2px);
+}
+
+.rn-cards.is-locked::after {
+  content: 'Sign up to explore full profiles';
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px;
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(243, 246, 251, 0.35) 0%, rgba(243, 246, 251, 0.85) 70%, rgba(243, 246, 251, 0.95) 100%);
+  color: var(--rn-muted);
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  font-size: 14px;
+}
+
+@keyframes rn-modal-in {
+  0% {
+    transform: translateY(8px) scale(0.98);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes rn-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .rn-card {
@@ -835,6 +966,89 @@ pre {
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.rn-invite-card {
+  background: var(--rn-surface);
+  border: 1px solid var(--rn-line);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--rn-shadow);
+}
+
+.rn-invite-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--rn-line);
+  background: #f8fafc;
+  color: var(--rn-muted);
+}
+
+.rn-invite-search input {
+  border: none;
+  background: transparent;
+  flex: 1;
+  font-size: 14px;
+  color: var(--rn-ink);
+}
+
+.rn-invite-search input:focus {
+  outline: none;
+}
+
+.rn-invite-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.rn-invite-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--rn-line);
+  background: #fbfdff;
+}
+
+.rn-invite-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rn-invite-meta strong {
+  font-size: 14px;
+}
+
+.rn-invite-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--rn-blue);
+  color: white;
+  border: none;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.rn-invite-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .rn-teams-bar {

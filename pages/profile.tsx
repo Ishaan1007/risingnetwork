@@ -352,7 +352,7 @@ export default function Profile() {
     return (
       <main className="rn-shell">
         <div className="rn-empty">
-          <p>Profile not found. Please sign in.</p>
+          <p>Profile not found. Please log in.</p>
           <button onClick={() => router.push('/')} className="rn-primary-btn" style={{ marginTop: 12 }}>
             Go back
           </button>

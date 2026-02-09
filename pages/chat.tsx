@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
 import Avatar from '../components/Avatar'
 import { LoaderIcon } from '../components/Icons'
+import { getSocket } from '../lib/socketClient'
 
 type ProfileMini = {
   id: string
@@ -28,6 +29,7 @@ type Message = {
   type: 'text' | 'poll'
   poll_id: string | null
   created_at: string
+  conversation_id?: string
 }
 
 type PollOption = {
@@ -63,6 +65,7 @@ export default function ChatPage() {
   const [profiles, setProfiles] = useState<Record<string, ProfileMini>>({})
   const messagesRef = useRef<HTMLDivElement | null>(null)
   const pollsRef = useRef<Record<string, Poll>>({})
+  const socketRef = useRef<any>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -89,6 +92,21 @@ export default function ChatPage() {
 
     return () => subscription?.unsubscribe()
   }, [router])
+
+  useEffect(() => {
+    if (!session?.user || typeof window === 'undefined') return
+    let active = true
+    const connect = async () => {
+      const socket = await getSocket()
+      if (!active) return
+      socketRef.current = socket
+      socket.emit('user:join', { userId: session.user.id })
+    }
+    connect()
+    return () => {
+      active = false
+    }
+  }, [session])
 
   useEffect(() => {
     if (!session?.user) return
@@ -402,6 +420,28 @@ export default function ChatPage() {
   }, [conversationId])
 
   useEffect(() => {
+    if (!conversationId || !socketRef.current) return
+    const socket = socketRef.current
+    const room = `chat:${conversationId}`
+    socket.emit('chat:join', { room })
+
+    const handleIncoming = (msg: Message) => {
+      if (!msg || msg.conversation_id !== conversationId) return
+      setMessages((prev) => (prev.some((m) => m.id === msg.id) ? prev : [...prev, msg]))
+      if (msg.type === 'poll' && msg.poll_id) {
+        refreshPoll(msg.poll_id)
+      }
+    }
+
+    socket.on('chat:message', handleIncoming)
+
+    return () => {
+      socket.off('chat:message', handleIncoming)
+      socket.emit('chat:leave', { room })
+    }
+  }, [conversationId])
+
+  useEffect(() => {
     pollsRef.current = polls
   }, [polls])
 
@@ -485,15 +525,24 @@ export default function ChatPage() {
     setSending(true)
     setChatError(null)
     setText('')
-    const { error } = await supabase.from('messages').insert({
-      conversation_id: activeConversationId,
-      sender_id: session.user.id,
-      content: value,
-      type: 'text',
-    })
+    const { data, error } = await supabase
+      .from('messages')
+      .insert({
+        conversation_id: activeConversationId,
+        sender_id: session.user.id,
+        content: value,
+        type: 'text',
+      })
+      .select('id, sender_id, content, type, poll_id, created_at, conversation_id')
+      .single()
     if (error) {
       console.error('send message error', error)
       setChatError(error.message || 'Failed to send message.')
+    } else if (data && socketRef.current) {
+      socketRef.current.emit('chat:send', {
+        room: `chat:${activeConversationId}`,
+        message: data,
+      })
     }
     setSending(false)
   }

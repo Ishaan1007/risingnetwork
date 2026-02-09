@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
+import { getSocket } from '../lib/socketClient'
 import { CheckIcon, LoaderIcon, SearchIcon, UsersIcon, XIcon } from '../components/Icons'
 
 type Invitation = {
@@ -26,6 +27,28 @@ export default function MyInvitations() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
   useEffect(() => {
+    let active = true
+    let socketCleanup: (() => void) | null = null
+    const fetchInvitations = async (id: string) => {
+      try {
+        const response = await fetch(`/api/invitations?user_id=${id}`)
+        const result = await response.json()
+
+        if (!active) return
+
+        if (response.ok) {
+          setInvitations(result.invitations || [])
+        } else {
+          setMessage({ type: 'error', text: result.error || 'Failed to load invitations' })
+        }
+      } catch (err: any) {
+        if (!active) return
+        setMessage({ type: 'error', text: err.message || 'Failed to load invitations' })
+      } finally {
+        if (active) setLoading(false)
+      }
+    }
+
     const init = async () => {
       const {
         data: { session },
@@ -39,23 +62,22 @@ export default function MyInvitations() {
       setUserId(session.user.id)
 
       // Fetch invitations
-      try {
-        const response = await fetch(`/api/invitations?user_id=${session.user.id}`)
-        const result = await response.json()
+      await fetchInvitations(session.user.id)
 
-        if (response.ok) {
-          setInvitations(result.invitations || [])
-        } else {
-          setMessage({ type: 'error', text: result.error || 'Failed to load invitations' })
-        }
-      } catch (err: any) {
-        setMessage({ type: 'error', text: err.message || 'Failed to load invitations' })
-      } finally {
-        setLoading(false)
+      const socket = await getSocket()
+      socket.emit('user:join', { userId: session.user.id })
+      const handleInvite = () => fetchInvitations(session.user.id)
+      socket.on('invite:received', handleInvite)
+      socketCleanup = () => {
+        socket.off('invite:received', handleInvite)
       }
     }
 
     init()
+    return () => {
+      active = false
+      if (socketCleanup) socketCleanup()
+    }
   }, [router])
 
   const handleResponse = async (invitationId: number, action: 'accept' | 'decline') => {

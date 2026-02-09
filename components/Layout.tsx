@@ -221,7 +221,7 @@ export default function Layout({ children }: LayoutProps) {
               </button>
               <button className="rn-nav-btn" type="button" onClick={handleSignIn}>
                 <LogInIcon size={20} />
-                <span>Sign In</span>
+                <span>Log In</span>
               </button>
             </>
           ) : (

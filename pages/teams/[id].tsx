@@ -9,6 +9,7 @@ import {
   UserPlusIcon,
   XIcon,
 } from '../../components/Icons'
+import { getSocket } from '../../lib/socketClient'
 
 type Member = {
   id: string
@@ -45,9 +46,10 @@ export default function TeamDetail() {
   const [team, setTeam] = useState<Team | null>(null)
   const [loading, setLoading] = useState(true)
   const [userId, setUserId] = useState<string | null>(null)
-  const [collegStudents, setCollegeStudents] = useState<Student[]>([])
-  const [selectedStudent, setSelectedStudent] = useState<string>('')
+  const [collegeStudents, setCollegeStudents] = useState<Student[]>([])
+  const [inviteQuery, setInviteQuery] = useState('')
   const [inviting, setInviting] = useState(false)
+  const [invitingStudentId, setInvitingStudentId] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [collegeId, setCollegeId] = useState<number | null>(null)
   const [confirmAction, setConfirmAction] = useState<{
@@ -152,13 +154,15 @@ export default function TeamDetail() {
     init()
   }, [id, router])
 
-  const handleInvite = async () => {
-    if (!selectedStudent || !team) {
+  const handleInvite = async (studentId?: string) => {
+    const targetId = studentId || ''
+    if (!targetId || !team) {
       setMessage({ type: 'error', text: 'Select a student to invite' })
       return
     }
 
     setInviting(true)
+    setInvitingStudentId(targetId)
     setMessage(null)
 
     try {
@@ -167,7 +171,7 @@ export default function TeamDetail() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           team_id: team.id,
-          user_id: selectedStudent,
+          user_id: targetId,
         }),
       })
 
@@ -175,9 +179,17 @@ export default function TeamDetail() {
 
       if (response.ok) {
         setMessage({ type: 'success', text: 'Invitation sent!' })
-        setSelectedStudent('')
-        // Refresh page
-        setTimeout(() => window.location.reload(), 1000)
+        setInviteQuery('')
+        setCollegeStudents((prev) => prev.filter((s) => s.id !== targetId))
+        const socket = await getSocket()
+        socket.emit('invite:send', {
+          toUserId: targetId,
+          payload: {
+            team_id: team.id,
+            team_name: team.name,
+            invited_at: new Date().toISOString(),
+          },
+        })
       } else {
         setMessage({ type: 'error', text: result.error || 'Failed to send invitation' })
       }
@@ -185,6 +197,7 @@ export default function TeamDetail() {
       setMessage({ type: 'error', text: error.message })
     } finally {
       setInviting(false)
+      setInvitingStudentId(null)
     }
   }
 
@@ -246,6 +259,13 @@ export default function TeamDetail() {
 
   const isTeamCreator = userId === team.created_by
   const isMember = team.members.some((m: any) => m.user_id === userId)
+  const filteredStudents = collegeStudents.filter((student) => {
+    if (team.members.some((m: any) => m.user_id === student.id)) return false
+    if (student.id === userId) return false
+    const q = inviteQuery.trim().toLowerCase()
+    if (!q) return true
+    return `${student.first_name} ${student.last_name}`.toLowerCase().includes(q)
+  })
 
   return (
     <main style={{ padding: 24, maxWidth: 800, margin: '0 auto' }}>
@@ -332,39 +352,48 @@ export default function TeamDetail() {
       {isTeamCreator && team.members.length < team.max_members && (
         <section style={{ marginBottom: 32 }}>
           <h2>Invite Students</h2>
-          <div style={{ display: 'flex', gap: 8 }}>
-            <select
-              value={selectedStudent}
-              onChange={(e) => setSelectedStudent(e.target.value)}
-              style={{
-                flex: 1,
-                padding: 8,
-                border: '1px solid #d1d5db',
-                borderRadius: 4,
-              }}
-            >
-              <option value="">Select a student...</option>
-              {collegStudents
-                .filter(
-                  (s) =>
-                    !team.members.some((m: any) => m.user_id === s.id) &&
-                    s.id !== userId
-                )
-                .map((student) => (
-                  <option key={student.id} value={student.id}>
-                    {student.first_name} {student.last_name}
-                  </option>
+          <div className="rn-invite-card">
+            <div className="rn-invite-search">
+              <UserPlusIcon size={16} />
+              <input
+                type="text"
+                placeholder="Search students by name"
+                value={inviteQuery}
+                onChange={(e) => setInviteQuery(e.target.value)}
+              />
+            </div>
+
+            {filteredStudents.length === 0 ? (
+              <p className="rn-muted" style={{ margin: 0 }}>
+                No available students to invite.
+              </p>
+            ) : (
+              <div className="rn-invite-list">
+                {filteredStudents.map((student) => (
+                  <div key={student.id} className="rn-invite-item">
+                    <div className="rn-invite-meta">
+                      <strong>
+                        {student.first_name} {student.last_name}
+                      </strong>
+                      <span className="rn-muted">{student.email}</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="rn-invite-btn"
+                      onClick={() => handleInvite(student.id)}
+                      disabled={inviting || invitingStudentId === student.id}
+                    >
+                      {invitingStudentId === student.id ? (
+                        <span className="spin"><LoaderIcon size={16} /></span>
+                      ) : (
+                        <UserPlusIcon size={16} />
+                      )}
+                      <span>Invite</span>
+                    </button>
+                  </div>
                 ))}
-            </select>
-            <button
-              onClick={handleInvite}
-              disabled={inviting || !selectedStudent}
-              className="icon-only"
-              aria-label={inviting ? 'Inviting...' : 'Invite'}
-              title={inviting ? 'Inviting...' : 'Invite'}
-            >
-              {inviting ? <span className="spin"><LoaderIcon size={16} /></span> : <UserPlusIcon size={16} />}
-            </button>
+              </div>
+            )}
           </div>
         </section>
       )}

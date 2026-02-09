@@ -8,9 +8,9 @@ export default function AuthCallback() {
   useEffect(() => {
     const handleCallback = async () => {
       // Supabase automatically handles the code exchange
-      // Just wait a moment and redirect home
+      // Just wait a moment and redirect to profile
       await new Promise((resolve) => setTimeout(resolve, 1000))
-      router.push('/')
+      router.push('/profile')
     }
 
     handleCallback()
