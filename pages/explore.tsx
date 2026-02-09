@@ -235,7 +235,9 @@ export default function ExploreFreelancers() {
               <button className="rn-secondary-btn" type="button" onClick={handleSignIn}>
                 Log in with Google
               </button>
-              <button className="rn-secondary-btn" type="button" onClick={handleSignupDismiss}>
+            </div>
+            <div className="rn-modal-footer">
+              <button className="rn-modal-link" type="button" onClick={handleSignupDismiss}>
                 Maybe later
               </button>
             </div>

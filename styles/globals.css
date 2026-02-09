@@ -610,6 +610,27 @@ pre {
   margin-top: 8px;
 }
 
+.rn-modal-footer {
+  margin-top: auto;
+  padding-top: 4px;
+  display: flex;
+  justify-content: center;
+}
+
+.rn-modal-link {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  color: var(--rn-muted);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.rn-modal-link:hover {
+  color: var(--rn-blue);
+}
+
 .rn-modal-close {
   position: absolute;
   top: 12px;
@@ -843,6 +864,42 @@ pre {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+.rn-save-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.rn-save-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -75%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(
+    120deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  transform: skewX(-20deg);
+  animation: rn-shine 2.2s infinite;
+  pointer-events: none;
+}
+
+.rn-save-btn:disabled::before {
+  animation: none;
+}
+
+@keyframes rn-shine {
+  0% {
+    left: -75%;
+  }
+  100% {
+    left: 125%;
+  }
 }
 
 .rn-primary-btn:hover {
@@ -1396,6 +1453,24 @@ pre {
   margin-bottom: 20px;
 }
 
+.rn-profile-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.rn-profile-edit-header .rn-profile-title {
+  margin-bottom: 0;
+}
+
+.rn-mobile-save-btn {
+  display: none;
+  padding: 8px 14px;
+  border-radius: 12px;
+}
+
 .rn-profile-row {
   display: flex;
   align-items: center;
@@ -1862,29 +1937,11 @@ pre {
     flex-direction: column;
     align-items: flex-start;
   }
-  .rn-mobile-actions {
-    position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(255, 255, 255, 0.96);
-    border-top: 1px solid var(--rn-line);
-    padding: 12px 14px;
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    z-index: 50;
-    box-shadow: 0 -12px 24px rgba(15, 23, 42, 0.08);
-  }
-  .rn-mobile-actions .rn-primary-btn,
-  .rn-mobile-actions .rn-secondary-btn {
-    flex: 1;
+  .rn-mobile-save-btn {
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
   }
-}
-
-.rn-mobile-actions {
-  display: none;
 }
 
 @media (max-width: 420px) {

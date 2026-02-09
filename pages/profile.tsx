@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
 import imageCompression from 'browser-image-compression'
-import { LoaderIcon, SaveIcon } from '../components/Icons'
+import { LoaderIcon } from '../components/Icons'
 import Avatar from '../components/Avatar'
 
 type Profile = {
@@ -402,7 +402,21 @@ export default function Profile() {
   return (
     <main className="rn-profile-shell">
       <div className="rn-profile-card">
-        <h1 className="rn-profile-title">Edit Profile</h1>
+        <div className="rn-profile-edit-header">
+          <h1 className="rn-profile-title">Edit Profile</h1>
+          <button
+            type="submit"
+            form="profile-form"
+            disabled={saving}
+            className="rn-primary-btn rn-mobile-save-btn rn-save-btn"
+          >
+            {saving ? (
+              <span className="spin"><LoaderIcon size={16} /></span>
+            ) : (
+              'Save'
+            )}
+          </button>
+        </div>
 
         {router.query.reason === 'name' && (
           <div className="rn-message error">
@@ -678,13 +692,11 @@ export default function Profile() {
           </div>
 
           <div className="rn-actions">
-            <button type="submit" disabled={saving} className="rn-primary-btn">
+            <button type="submit" disabled={saving} className="rn-primary-btn rn-save-btn">
               {saving ? (
                 <span className="spin"><LoaderIcon size={16} /></span>
               ) : (
-                <>
-                  <SaveIcon size={16} /> Save Changes
-                </>
+                'Save'
               )}
             </button>
             <button type="button" className="rn-secondary-btn" onClick={() => router.back()}>
@@ -692,30 +704,6 @@ export default function Profile() {
             </button>
           </div>
         </form>
-
-        <div className="rn-mobile-actions">
-          <button
-            type="submit"
-            form="profile-form"
-            disabled={saving}
-            className="rn-primary-btn"
-          >
-            {saving ? (
-              <span className="spin"><LoaderIcon size={16} /></span>
-            ) : (
-              <>
-                <SaveIcon size={16} /> Save Changes
-              </>
-            )}
-          </button>
-          <button
-            type="button"
-            className="rn-secondary-btn"
-            onClick={() => router.back()}
-          >
-            Cancel
-          </button>
-        </div>
       </div>
     </main>
   )
