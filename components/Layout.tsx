@@ -79,7 +79,7 @@ export default function Layout({ children }: LayoutProps) {
       try {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('avatar_url, bio, linkedin_url, github_url, portfolio_url, role, city')
+          .select('first_name, last_name')
           .eq('id', session.user.id)
           .single()
 
