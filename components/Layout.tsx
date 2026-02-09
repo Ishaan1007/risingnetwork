@@ -6,7 +6,6 @@ import {
   LogOutIcon,
   ProfileIcon,
   SearchIcon,
-  UsersIcon,
   UserPlusIcon,
 } from './Icons'
 
@@ -177,6 +176,38 @@ export default function Layout({ children }: LayoutProps) {
               if (e.key === 'Enter') handleSearch()
             }}
           />
+          <button className="rn-search-btn" type="button" onClick={handleSearch}>
+            Explore
+          </button>
+        </div>
+        <nav className="rn-nav">
+          <button
+            className={`rn-nav-btn ${isActive('/explore') ? 'is-active' : ''}`}
+            type="button"
+            onClick={() => router.push('/explore')}
+          >
+            <SearchIcon size={20} />
+            <span>Explore</span>
+          </button>
+          {!session ? (
+            <>
+              <button
+                className="rn-nav-btn is-locked"
+                type="button"
+                onClick={() => alert('Please log in to view your Profile.')}
+              >
+                <span className="rn-nav-icon">
+                  <ProfileIcon size={20} />
+                </span>
+                <span>Profile</span>
+              </button>
+              <button className="rn-nav-btn" type="button" onClick={handleSignIn}>
+                <LogInIcon size={20} />
+                <span>Log In</span>
+              </button>
+            </>
+          ) : (
+            <>
               <button
                 className={`rn-nav-btn ${isActive('/connections') ? 'is-active' : ''}`}
                 type="button"
