@@ -196,14 +196,6 @@ export default function Layout({ children }: LayoutProps) {
               <button
                 className="rn-nav-btn is-locked"
                 type="button"
-                onClick={() => alert('Please log in to view Teams.')}
-              >
-                <UsersIcon size={20} />
-                <span>Teams</span>
-              </button>
-              <button
-                className="rn-nav-btn is-locked"
-                type="button"
                 onClick={() => alert('Please log in to view Chat.')}
               >
                 <ChatIcon size={20} />
@@ -226,14 +218,6 @@ export default function Layout({ children }: LayoutProps) {
             </>
           ) : (
             <>
-              <button
-                className={`rn-nav-btn ${isActive('/teams') ? 'is-active' : ''}`}
-                type="button"
-                onClick={() => router.push('/teams')}
-              >
-                <UsersIcon size={20} />
-                <span>Teams</span>
-              </button>
               <button
                 className={`rn-nav-btn ${isActive('/chat') ? 'is-active' : ''}`}
                 type="button"

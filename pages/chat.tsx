@@ -615,8 +615,11 @@ export default function ChatPage() {
       <div className="rn-chat-layout">
         <aside className="rn-panel rn-chat-sidebar">
           <div className="rn-chat-sidebar-header">
-            <h2>Chat</h2>
+            <h2>Messages</h2>
             <span>{targets.length} active</span>
+          </div>
+          <div className="rn-chat-search">
+            <input type="text" placeholder="Search conversations..." />
           </div>
           <div className="rn-chat-group">
             <h3>Direct</h3>
@@ -675,7 +678,11 @@ export default function ChatPage() {
 
         <section className="rn-panel rn-chat-thread">
           {!activeTarget ? (
-            <div className="rn-empty">Select a conversation to start.</div>
+            <div className="rn-chat-empty-state">
+              <div className="rn-chat-empty-icon" aria-hidden="true" />
+              <h3>Select a conversation</h3>
+              <p>Choose a conversation from the list to start messaging.</p>
+            </div>
           ) : (
             <>
               <header className="rn-chat-thread-header">
