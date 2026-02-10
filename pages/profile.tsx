@@ -49,6 +49,7 @@ export default function Profile() {
     graduation_year: null,
     semester: null,
   })
+  const [hasStartedTyping, setHasStartedTyping] = useState(false)
   const [universityQuery, setUniversityQuery] = useState('')
   const [skillQuery, setSkillQuery] = useState('')
   const [skillsOpen, setSkillsOpen] = useState(false)
@@ -152,9 +153,19 @@ export default function Profile() {
     return () => subscription?.unsubscribe()
   }, [router])
 
-  const handleProfileChange = useCallback((field: keyof Profile, value: any) => {
-    setProfile((prev) => (prev ? { ...prev, [field]: value } : null))
-  }, [])
+  const handleProfileChange = (field: keyof Profile, value: string) => {
+    setProfile((prev) => {
+      if (!prev) return null
+      const updated = { ...prev, [field]: value }
+      
+      // Track if user has started typing their name
+      if (field === 'first_name' && value.trim().length > 0) {
+        setHasStartedTyping(true)
+      }
+      
+      return updated
+    })
+  }
 
   const handleSkillToggle = useCallback((skillId: number) => {
     setSelectedSkillIds((prev) =>
@@ -183,8 +194,8 @@ export default function Profile() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!profile || !userId) return
-    if (!profile.first_name?.trim() || !profile.last_name?.trim()) {
-      setMessage({ type: 'error', text: 'First name and last name are required.' })
+    if (!profile.first_name?.trim()) {
+      setMessage({ type: 'error', text: 'First name is required.' })
       return
     }
 
@@ -418,9 +429,9 @@ export default function Profile() {
           </button>
         </div>
 
-        {router.query.reason === 'name' && (
+        {router.query.reason === 'name' && !hasStartedTyping && (
           <div className="rn-message error">
-            Please enter your first and last name to continue.
+            Please fill in your name to continue.
           </div>
         )}
 
@@ -468,18 +479,8 @@ export default function Profile() {
             <input
               id="firstName"
               type="text"
-              value={profile.first_name}
+              value={profile.first_name || ''}
               onChange={(e) => handleProfileChange('first_name', e.target.value)}
-            />
-          </div>
-
-          <div className="rn-form-field">
-            <label htmlFor="lastName">Last Name *</label>
-            <input
-              id="lastName"
-              type="text"
-              value={profile.last_name}
-              onChange={(e) => handleProfileChange('last_name', e.target.value)}
             />
           </div>
 
