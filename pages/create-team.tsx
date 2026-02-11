@@ -1,21 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
-import { PlusIcon, UserPlusIcon } from '../components/Icons'
+import { PlusIcon } from '../components/Icons'
 import Avatar from '../components/Avatar'
-
-type ConnectedFriend = {
-  id: string
-  first_name: string
-  last_name: string
-  full_name: string
-}
 
 export default function CreateTeam() {
   const router = useRouter()
   const [name, setName] = useState('')
-  const [selectedMembers, setSelectedMembers] = useState<string[]>([])
-  const [connectedFriends, setConnectedFriends] = useState<ConnectedFriend[]>([])
   const [saving, setSaving] = useState(false)
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
@@ -49,44 +40,6 @@ export default function CreateTeam() {
       }
 
       setCollegeId(collegeInfo.college_id)
-
-      // Fetch connected friends
-      const { data: connections, error: connectionsError } = await supabase
-        .from('connections')
-        .select(`
-          recipient_id,
-          requester_id,
-          recipient:profiles!connections_recipient_id_fkey (
-            id,
-            first_name,
-            last_name
-          ),
-          requester:profiles!connections_requester_id_fkey (
-            id,
-            first_name,
-            last_name
-          )
-        `)
-        .eq('status', 'accepted')
-        .or(`requester_id.eq.${session.user.id},recipient_id.eq.${session.user.id}`)
-
-      if (connectionsError) {
-        console.error('Error fetching connections:', connectionsError)
-      } else if (connections) {
-        const friends: ConnectedFriend[] = connections
-          .map((conn: any) => {
-            const friend = conn.requester_id === session.user.id ? conn.recipient : conn.requester
-            return {
-              id: friend.id,
-              first_name: friend.first_name,
-              last_name: friend.last_name,
-              full_name: `${friend.first_name} ${friend.last_name}`.trim() || 'Unknown'
-            }
-          })
-          .filter((friend: ConnectedFriend) => friend.id !== session.user.id)
-        
-        setConnectedFriends(friends)
-      }
 
       setLoading(false)
     }
@@ -130,22 +83,6 @@ export default function CreateTeam() {
 
       const team = result.team
 
-      // Send invitations to selected members
-      if (selectedMembers.length > 0) {
-        const invitationPromises = selectedMembers.map(memberId =>
-          fetch('/api/teams/invite', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              team_id: team.id,
-              user_id: memberId,
-            }),
-          })
-        )
-
-        await Promise.all(invitationPromises)
-      }
-
       setMessage({ type: 'success', text: 'Team created successfully!' })
       setTimeout(() => router.push('/teams'), 1000)
     } catch (error: any) {
@@ -153,14 +90,6 @@ export default function CreateTeam() {
     } finally {
       setSaving(false)
     }
-  }
-
-  const toggleMemberSelection = (friendId: string) => {
-    setSelectedMembers(prev => 
-      prev.includes(friendId) 
-        ? prev.filter(id => id !== friendId)
-        : [...prev, friendId]
-    )
   }
 
   if (loading) {
@@ -215,66 +144,6 @@ export default function CreateTeam() {
           />
         </div>
 
-        {/* Team Members */}
-        <div>
-          <label style={{ display: 'block', marginBottom: 8, fontWeight: 600 }}>
-            <span style={{ marginRight: 8, verticalAlign: 'middle', display: 'inline-block' }}>
-              <UserPlusIcon size={16} />
-            </span>
-            Invite Team Members (Optional)
-          </label>
-          <p style={{ margin: '0 0 12px 0', fontSize: 14, color: '#6b7280' }}>
-            You can only invite users you are connected with
-          </p>
-          
-          {connectedFriends.length === 0 ? (
-            <div style={{
-              padding: 16,
-              border: '1px solid #e5e7eb',
-              borderRadius: 8,
-              backgroundColor: '#f9fafb',
-              textAlign: 'center',
-              color: '#6b7280'
-            }}>
-              No connected friends available. You can create the team and invite members later.
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-              {connectedFriends.map((friend) => (
-                <div
-                  key={friend.id}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    padding: 12,
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 8,
-                    backgroundColor: '#fff',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    ...(selectedMembers.includes(friend.id) && {
-                      backgroundColor: '#eff6ff',
-                      borderColor: '#3b82f6'
-                    })
-                  }}
-                  onClick={() => toggleMemberSelection(friend.id)}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedMembers.includes(friend.id)}
-                    onChange={() => {}}
-                    style={{ marginRight: 12 }}
-                  />
-                  <Avatar size={40} />
-                  <div style={{ marginLeft: 12, flex: 1 }}>
-                    <div style={{ fontWeight: 500 }}>{friend.full_name}</div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Submit */}
         <div style={{ display: 'flex', gap: 12 }}>
           <button
@@ -283,11 +152,21 @@ export default function CreateTeam() {
             style={{
               flex: 1,
               padding: 12,
-              border: '1px solid #d1d5db',
+              border: '1px solid #3b82f6',
               borderRadius: 8,
-              backgroundColor: '#fff',
+              backgroundColor: '#3b82f6',
+              color: '#fff',
               cursor: 'pointer',
               fontSize: 16,
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => {
+              e.currentTarget.style.backgroundColor = '#2563eb'
+              e.currentTarget.style.borderColor = '#2563eb'
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.backgroundColor = '#3b82f6'
+              e.currentTarget.style.borderColor = '#3b82f6'
             }}
           >
             Cancel
