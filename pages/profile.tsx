@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 import imageCompression from 'browser-image-compression'
 import { LoaderIcon } from '../components/Icons'
 import Avatar from '../components/Avatar'
+import { syncProfilePicture } from '../lib/gravatar'
 
 type Profile = {
   id: string
@@ -50,6 +51,7 @@ export default function Profile() {
     semester: null,
   })
   const [hasStartedTyping, setHasStartedTyping] = useState(false)
+  const [syncingAvatar, setSyncingAvatar] = useState(false)
   const [universityQuery, setUniversityQuery] = useState('')
   const [skillQuery, setSkillQuery] = useState('')
   const [skillsOpen, setSkillsOpen] = useState(false)
@@ -172,6 +174,48 @@ export default function Profile() {
       prev.includes(skillId) ? prev.filter((id) => id !== skillId) : [...prev, skillId]
     )
   }, [])
+
+  const handleSyncAvatar = async () => {
+    if (!userId) return
+    
+    setSyncingAvatar(true)
+    setMessage(null)
+    
+    try {
+      // Get current session
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.user) throw new Error('No user session')
+      
+      // Sync profile picture
+      const profilePicture = syncProfilePicture(session.user)
+      
+      if (profilePicture) {
+        // Update profile with new avatar
+        const { error } = await supabase
+          .from('profiles')
+          .update({ 
+            avatar_url: profilePicture,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId)
+        
+        if (error) throw error
+        
+        // Update local state
+        setProfile(prev => prev ? { ...prev, avatar_url: profilePicture } : null)
+        setAvatarPreview(profilePicture)
+        
+        setMessage({ type: 'success', text: 'Profile picture synced successfully!' })
+      } else {
+        setMessage({ type: 'error', text: 'No profile picture available to sync.' })
+      }
+    } catch (error) {
+      console.error('Error syncing avatar:', error)
+      setMessage({ type: 'error', text: 'Failed to sync profile picture.' })
+    } finally {
+      setSyncingAvatar(false)
+    }
+  }
 
   const filteredColleges = allColleges.filter((c) => {
     const query = universityQuery.trim().toLowerCase()
@@ -469,6 +513,22 @@ export default function Profile() {
                   <span className="spin"><LoaderIcon size={14} /></span>
                 </small>
               )}
+              <button
+                type="button"
+                className="rn-secondary-btn"
+                onClick={handleSyncAvatar}
+                disabled={syncingAvatar}
+                style={{ marginLeft: 8 }}
+              >
+                {syncingAvatar ? (
+                  <>
+                    <span className="spin"><LoaderIcon size={14} /></span>
+                    Syncing...
+                  </>
+                ) : (
+                  'Sync from Google'
+                )}
+              </button>
             </div>
           </div>
         </div>

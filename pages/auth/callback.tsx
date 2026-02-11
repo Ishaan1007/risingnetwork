@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabaseClient'
+import { syncProfilePicture } from '../../lib/gravatar'
 
 export default function AuthCallback() {
   const router = useRouter()
@@ -15,6 +16,29 @@ export default function AuthCallback() {
         
         if (session?.user) {
           setUser(session.user)
+          
+          // Sync profile picture from Google/Gravatar
+          const profilePicture = syncProfilePicture(session.user)
+          
+          // Update user profile with synced picture if they don't have one
+          if (profilePicture) {
+            const { data: existingProfile } = await supabase
+              .from('profiles')
+              .select('avatar_url')
+              .eq('id', session.user.id)
+              .single()
+            
+            // Only update if they don't have an avatar_url
+            if (!existingProfile?.avatar_url) {
+              await supabase
+                .from('profiles')
+                .update({ 
+                  avatar_url: profilePicture,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', session.user.id)
+            }
+          }
           
           // Check if user has first_name
           if (!session.user.user_metadata?.first_name) {
@@ -42,7 +66,7 @@ export default function AuthCallback() {
   if (loading) {
     return (
       <div style={{ padding: 24, textAlign: 'center' }}>
-        <p>Signing in...</p>
+        <p>Setting up your profile...</p>
       </div>
     )
   }
@@ -94,7 +118,7 @@ export default function AuthCallback() {
             Welcome back, {user.user_metadata.first_name}! 👋
           </h3>
           <p style={{ margin: '0 0 16px 0', lineHeight: 1.5 }}>
-            Your profile is ready. Continue exploring or update your information.
+            Your profile picture has been synced from your Google account.
           </p>
           <button 
             onClick={() => router.push('/profile')}
