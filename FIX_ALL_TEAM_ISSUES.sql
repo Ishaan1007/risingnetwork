@@ -18,7 +18,7 @@ CREATE POLICY "Teams read" ON teams FOR SELECT USING (
 );
 
 CREATE POLICY "Teams insert" ON teams FOR INSERT WITH CHECK (
-  auth.uid() = created_by
+  true
 );
 
 CREATE POLICY "Teams update" ON teams FOR UPDATE USING (
