@@ -57,7 +57,7 @@ export default function Chat({
 
         // Initialize Ably with Chat SDK
         const { realtime, chat } = await initializeAbly(
-          process.env.NEXT_PUBLIC_ABLY_CLIENT_KEY || '',
+          process.env.ABLY_API_KEY || '',
           currentUserId
         )
 

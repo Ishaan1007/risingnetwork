@@ -14,9 +14,8 @@ export interface OneSignalInitOptions {
 
 export async function initializeOneSignal(appId: string, safariWebId?: string) {
   try {
-    await OneSignal.init({
+    const initOptions: any = {
       appId,
-      safari_web_id: safariWebId,
       notifyButton: {
         enable: true,
       },
@@ -26,7 +25,14 @@ export async function initializeOneSignal(appId: string, safariWebId?: string) {
         cancelButtonText: "Don't Allow"
       },
       allowLocalhostAsSecureOrigin: true, // For development
-    })
+    }
+
+    // Only add safari_web_id if provided
+    if (safariWebId) {
+      initOptions.safari_web_id = safariWebId
+    }
+
+    await OneSignal.init(initOptions)
 
     console.log('OneSignal initialized successfully')
     return true

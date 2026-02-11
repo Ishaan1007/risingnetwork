@@ -55,7 +55,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     return res.status(200).json({
       tokenRequest: tokenDetails,
-      apiKey: process.env.NEXT_PUBLIC_ABLY_CLIENT_KEY
+      apiKey: process.env.ABLY_API_KEY
     })
 
   } catch (error) {

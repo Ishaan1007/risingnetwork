@@ -10,7 +10,8 @@ function App({ Component, pageProps }: AppProps) {
     const initOneSignal = async () => {
       // Use your actual OneSignal App ID here
       const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || 'your-onesignal-app-id'
-      await initializeOneSignal(appId)
+      const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID
+      await initializeOneSignal(appId, safariWebId)
     }
 
     initOneSignal()
