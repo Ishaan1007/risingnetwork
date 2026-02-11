@@ -11,11 +11,20 @@ const base = {
   strokeLinejoin: 'round' as const,
 }
 
-export function SearchIcon({ size = 16, color, strokeWidth = 2 }: IconProps) {
+export function SearchIcon({ size = 20, color, strokeWidth = 2 }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" style={{ color }} {...base} strokeWidth={strokeWidth}>
-      <circle cx="11" cy="11" r="7" />
-      <path d="M21 21l-4.35-4.35" />
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ color }}>
+      <circle cx="11" cy="11" r="8"></circle>
+      <path d="m21 21-4.35-4.35"></path>
+    </svg>
+  )
+}
+
+export function SearchButtonIcon({ size = 16, color, strokeWidth = 2.5 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={{ color }}>
+      <circle cx="11" cy="11" r="8"></circle>
+      <path d="m21 21-4.35-4.35"></path>
     </svg>
   )
 }

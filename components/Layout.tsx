@@ -6,6 +6,7 @@ import {
   LogOutIcon,
   ProfileIcon,
   SearchIcon,
+  SearchButtonIcon,
   TeamsIcon,
   UserPlusIcon,
 } from './Icons'
@@ -161,9 +162,16 @@ export default function Layout({ children }: LayoutProps) {
               if (e.key === 'Enter') handleSearch()
             }}
           />
-          <button className="rn-search-btn" type="button" onClick={handleSearch}>
-            Explore
-          </button>
+          {searchInput.trim().length > 0 && (
+            <button 
+              className="rn-search-btn" 
+              type="button" 
+              onClick={handleSearch}
+              aria-label="Search"
+            >
+              <SearchButtonIcon size={16} />
+            </button>
+          )}
         </div>
         <nav className="rn-nav">
           <button
