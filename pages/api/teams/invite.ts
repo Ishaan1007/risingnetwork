@@ -45,6 +45,30 @@ export default async function handler(
       return res.status(500).json({ error: error.message })
     }
 
+    // Send notification to invitee
+    try {
+      const notificationResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/notifications/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'team_invitation',
+          recipientId: user_id,
+          data: {
+            teamId: team_id
+          }
+        })
+      })
+
+      if (notificationResponse.ok) {
+        console.log('Team invitation notification sent successfully')
+      }
+    } catch (notificationError) {
+      console.error('Failed to send notification:', notificationError)
+      // Don't fail the request if notification fails
+    }
+
     return res.status(201).json({ invitation })
   } catch (error: any) {
     return res.status(500).json({ error: error.message })

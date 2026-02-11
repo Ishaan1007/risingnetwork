@@ -5,6 +5,7 @@ import imageCompression from 'browser-image-compression'
 import { LoaderIcon } from '../components/Icons'
 import Avatar from '../components/Avatar'
 import { syncProfilePicture } from '../lib/gravatar'
+import { subscribeToNotifications, getOneSignalPlayerId } from '../lib/onesignal'
 
 type Profile = {
   id: string
@@ -78,56 +79,50 @@ export default function Profile() {
           console.error('profile fetch error', profileError)
           setMessage({ type: 'error', text: 'Failed to load profile' })
           setLoading(false)
-          return
         }
 
-        setProfile(profileData)
-
-        // Fetch all skills
-        const { data: skillsData, error: skillsError } = await supabase
+        // Fetch skills
+        const { data: skillsData } = await supabase
           .from('skills')
-          .select('id, name, category')
+          .select('*')
           .order('name')
 
-        if (skillsError) {
-          console.error('skills fetch error', skillsError)
-        } else {
-          setAllSkills(skillsData || [])
+        if (skillsData) {
+          setAllSkills(skillsData)
         }
 
-        // Fetch all colleges
+        // Fetch colleges
         const { data: collegesData } = await supabase
           .from('colleges')
-          .select('id, name, city')
+          .select('*')
           .order('name')
 
         if (collegesData) {
           setAllColleges(collegesData)
         }
 
-        // Fetch user's current skills
-        const { data: userSkillsData, error: userSkillsError } = await supabase
+        // Fetch user's skills and college info
+        const { data: userSkills } = await supabase
           .from('user_skills')
           .select('skill_id')
           .eq('user_id', userId)
 
-        if (!userSkillsError && userSkillsData) {
-          setSelectedSkillIds(userSkillsData.map((us) => us.skill_id))
+        if (userSkills) {
+          setSelectedSkillIds(userSkills.map((us: any) => us.skill_id))
         }
 
-        // Fetch user's college info (if student)
-        const { data: collegeData } = await supabase
+        const { data: userCollegeInfo } = await supabase
           .from('college_info')
-          .select('college_id, major, graduation_year, semester')
+          .select('*')
           .eq('user_id', userId)
           .single()
 
-        if (collegeData) {
+        if (userCollegeInfo) {
           setCollegeInfo({
-            college_id: collegeData.college_id,
-            major: collegeData.major || '',
-            graduation_year: collegeData.graduation_year,
-            semester: collegeData.semester ?? null,
+            college_id: userCollegeInfo.college_id,
+            major: userCollegeInfo.major || '',
+            graduation_year: userCollegeInfo.graduation_year,
+            semester: userCollegeInfo.semester,
           })
         }
 
