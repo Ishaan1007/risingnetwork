@@ -12,9 +12,9 @@ type Profile = {
   city: string
   role?: 'student' | 'freelancer' | 'teacher' | null
   bio: string
-  linkedin_url?: string | undefined
-  github_url?: string | undefined
-  portfolio_url?: string | undefined
+  linkedin_url?: string | null
+  github_url?: string | null
+  portfolio_url?: string | null
   avatar_url?: string | null
 }
 
@@ -666,7 +666,7 @@ export default function Profile() {
               type="url"
               placeholder="https://linkedin.com/in/yourprofile"
               value={profile.linkedin_url || ''}
-              onChange={(e) => handleProfileChange('linkedin_url', e.target.value || undefined)}
+              onChange={(e) => handleProfileChange('linkedin_url', e.target.value || null)}
             />
           </div>
 
@@ -677,7 +677,7 @@ export default function Profile() {
               type="url"
               placeholder="https://github.com/yourprofile"
               value={profile.github_url || ''}
-              onChange={(e) => handleProfileChange('github_url', e.target.value || undefined)}
+              onChange={(e) => handleProfileChange('github_url', e.target.value || null)}
             />
           </div>
 
@@ -688,7 +688,7 @@ export default function Profile() {
               type="url"
               placeholder="https://yourportfolio.com"
               value={profile.portfolio_url || ''}
-              onChange={(e) => handleProfileChange('portfolio_url', e.target.value || undefined)}
+              onChange={(e) => handleProfileChange('portfolio_url', e.target.value || null)}
             />
           </div>
 
