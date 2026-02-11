@@ -7,6 +7,8 @@ export default function AuthCallback() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [hasCompleteName, setHasCompleteName] = useState(false)
+  const [displayName, setDisplayName] = useState('')
 
   useEffect(() => {
     const handleCallback = async () => {
@@ -20,28 +22,75 @@ export default function AuthCallback() {
           // Sync profile picture from Google/Gravatar
           const profilePicture = syncProfilePicture(session.user)
           
-          // Update user profile with synced picture if they don't have one
-          if (profilePicture) {
-            const { data: existingProfile } = await supabase
-              .from('profiles')
-              .select('avatar_url')
-              .eq('id', session.user.id)
-              .single()
+          // Get name from Google profile
+          const googleFirstName = session.user.user_metadata?.first_name || session.user.user_metadata?.given_name
+          const googleLastName = session.user.user_metadata?.last_name || session.user.user_metadata?.family_name
+          
+          // Check if user has existing profile
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', session.user.id)
+            .single()
+          
+          if (existingProfile) {
+            // Update existing profile with Google data if fields are empty
+            const updateData: any = {
+              updated_at: new Date().toISOString()
+            }
             
-            // Only update if they don't have an avatar_url
-            if (!existingProfile?.avatar_url) {
+            if (profilePicture && !existingProfile.avatar_url) {
+              updateData.avatar_url = profilePicture
+            }
+            
+            if (googleFirstName && !existingProfile.first_name) {
+              updateData.first_name = googleFirstName
+            }
+            
+            if (googleLastName && !existingProfile.last_name) {
+              updateData.last_name = googleLastName
+            }
+            
+            // Only update if there are changes
+            if (Object.keys(updateData).length > 1) { // More than just updated_at
               await supabase
                 .from('profiles')
-                .update({ 
-                  avatar_url: profilePicture,
-                  updated_at: new Date().toISOString()
-                })
+                .update(updateData)
                 .eq('id', session.user.id)
             }
+          } else {
+            // Create new profile with Google data
+            const newProfileData: any = {
+              id: session.user.id,
+              first_name: googleFirstName || 'User',
+              last_name: googleLastName || '',
+              bio: '',
+              city: '',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+            
+            if (profilePicture) {
+              newProfileData.avatar_url = profilePicture
+            }
+            
+            await supabase
+              .from('profiles')
+              .insert(newProfileData)
           }
           
-          // Check if user has first_name
-          if (!session.user.user_metadata?.first_name) {
+          // Check if user has a complete name (either from Google or database)
+          const hasCompleteName = (googleFirstName && googleLastName) || 
+                              (existingProfile?.first_name && existingProfile?.last_name) ||
+                              (existingProfile?.first_name && !existingProfile?.last_name) // Allow first name only
+          
+          const displayName = googleFirstName || existingProfile?.first_name || 'User'
+          
+          // Set state for rendering
+          setHasCompleteName(hasCompleteName)
+          setDisplayName(displayName)
+          
+          if (!hasCompleteName) {
             // Redirect to profile with name prompt
             router.push('/profile?reason=name')
           } else {
@@ -73,7 +122,7 @@ export default function AuthCallback() {
 
   return (
     <div style={{ padding: 24, textAlign: 'center' }}>
-      {user && !user.user_metadata?.first_name && (
+      {user && !hasCompleteName && (
         <div style={{ 
           backgroundColor: '#f0f9ff', 
           border: '1px solid #3b82f6', 
@@ -106,7 +155,7 @@ export default function AuthCallback() {
         </div>
       )}
       
-      {user && user.user_metadata?.first_name && (
+      {user && hasCompleteName && (
         <div style={{ 
           backgroundColor: '#10b981', 
           border: '1px solid #059669', 
@@ -115,10 +164,10 @@ export default function AuthCallback() {
           maxWidth: 400
         }}>
           <h3 style={{ margin: '0 0 16px 0', color: '#059669' }}>
-            Welcome back, {user.user_metadata.first_name}! 👋
+            Welcome back, {displayName}! 👋
           </h3>
           <p style={{ margin: '0 0 16px 0', lineHeight: 1.5 }}>
-            Your profile picture has been synced from your Google account.
+            Your profile has been set up with your Google account information.
           </p>
           <button 
             onClick={() => router.push('/profile')}
