@@ -77,8 +77,19 @@ export default function Profile() {
 
         if (profileError) {
           console.error('profile fetch error', profileError)
-          setMessage({ type: 'error', text: 'Failed to load profile' })
+          
+          // Handle case where profile doesn't exist
+          if (profileError.code === 'PGRST116') {
+            setMessage({ type: 'error', text: 'Profile not found. Please create your profile.' })
+          } else {
+            setMessage({ type: 'error', text: 'Failed to load profile' })
+          }
           setLoading(false)
+          return
+        }
+
+        if (profileData) {
+          setProfile(profileData)
         }
 
         // Fetch skills
@@ -434,10 +445,23 @@ export default function Profile() {
     return (
       <main className="rn-shell">
         <div className="rn-empty">
-          <p>Profile not found. Please log in.</p>
-          <button onClick={() => router.push('/')} className="rn-primary-btn" style={{ marginTop: 12 }}>
-            Go back
-          </button>
+          {message ? (
+            <>
+              <p>{message.text}</p>
+              {message.text.includes('create your profile') && (
+                <button onClick={() => router.push('/')} className="rn-primary-btn" style={{ marginTop: 12 }}>
+                  Go to Home
+                </button>
+              )}
+            </>
+          ) : (
+            <>
+              <p>Profile not found. Please log in.</p>
+              <button onClick={() => router.push('/')} className="rn-primary-btn" style={{ marginTop: 12 }}>
+                Go back
+              </button>
+            </>
+          )}
         </div>
       </main>
     )
@@ -468,15 +492,15 @@ export default function Profile() {
           </button>
         </div>
 
-        {router.query.reason === 'name' && !hasStartedTyping && (
-          <div className="rn-message error">
-            Please fill in your name to continue.
-          </div>
-        )}
-
         {message && (
           <div className={`rn-message ${message.type}`}>
             {message.text}
+          </div>
+        )}
+
+        {router.query.reason === 'name' && !hasStartedTyping && (
+          <div className="rn-message error">
+            Please fill in your name to continue.
           </div>
         )}
 
