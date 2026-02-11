@@ -1,4 +1,6 @@
 import * as Ably from 'ably'
+import { ChatClient } from '@ably/chat'
+import type { ChatMessageEvent } from '@ably/chat'
 
 export interface AblyConfig {
   apiKey: string
@@ -7,15 +9,6 @@ export interface AblyConfig {
   disconnectedRetryTimeout?: number
   suspendedRetryTimeout?: number
   realtimeRequestTimeout?: number
-}
-
-export interface AblyMessage {
-  type: string
-  data: any
-  id?: string
-  timestamp?: number
-  clientId?: string
-  connectionId?: string
 }
 
 export interface ChatMessage {
@@ -32,6 +25,8 @@ export interface ChatMessage {
     fileSize?: number
     fileType?: string
     imageUrl?: string
+    edited?: boolean
+    deleted?: boolean
   }
 }
 
@@ -69,9 +64,10 @@ export interface ConnectionRequest {
   timestamp: number
 }
 
-// Ably client instance
-let ablyClient: Ably.Realtime | null = null
-let ablyChannels: Map<string, Ably.Channels> = new Map()
+// Ably clients
+let realtimeClient: Ably.Realtime | null = null
+let chatClient: ChatClient | null = null
+let chatRooms: Map<string, any> = new Map()
 
 export function createAblyClient(config: AblyConfig): Ably.Realtime {
   const client = new Ably.Realtime({
@@ -81,9 +77,6 @@ export function createAblyClient(config: AblyConfig): Ably.Realtime {
     disconnectedRetryTimeout: config.disconnectedRetryTimeout ?? 15000,
     suspendedRetryTimeout: config.suspendedRetryTimeout ?? 30000,
     realtimeRequestTimeout: config.realtimeRequestTimeout ?? 15000,
-    rest: {
-      restRequestTimeout: 15000,
-    },
   })
 
   // Connection state handlers
@@ -107,84 +100,173 @@ export function createAblyClient(config: AblyConfig): Ably.Realtime {
 }
 
 export function getAblyClient(): Ably.Realtime | null {
-  return ablyClient
+  return realtimeClient
 }
 
-export function initializeAbly(apiKey: string, clientId?: string): Ably.Realtime {
-  if (ablyClient) {
-    return ablyClient
+export function getChatClient(): ChatClient | null {
+  return chatClient
+}
+
+export async function initializeAbly(apiKey: string, clientId?: string): Promise<{ realtime: Ably.Realtime, chat: ChatClient }> {
+  if (realtimeClient && chatClient) {
+    return { realtime: realtimeClient, chat: chatClient }
   }
 
-  ablyClient = createAblyClient({
+  realtimeClient = createAblyClient({
     apiKey,
     clientId,
   })
 
-  return ablyClient
-}
+  chatClient = new ChatClient(realtimeClient)
 
-export function getChannel(channelName: string): Ably.Channels | null {
-  if (!ablyClient) {
-    console.error('Ably client not initialized')
-    return null
-  }
-
-  if (!ablyChannels.has(channelName)) {
-    const channel = ablyClient.channels.get(channelName)
-    ablyChannels.set(channelName, channel)
-  }
-
-  return ablyChannels.get(channelName) || null
-}
-
-export async function subscribeToChannel(
-  channelName: string,
-  callback: (message: AblyMessage) => void
-): Promise<void> {
-  const channel = getChannel(channelName)
-  if (!channel) {
-    throw new Error(`Failed to get channel: ${channelName}`)
-  }
-
-  channel.subscribe((message) => {
-    callback({
-      type: message.name,
-      data: message.data,
-      id: message.id,
-      timestamp: message.timestamp,
-      clientId: message.clientId,
-      connectionId: message.connectionId,
-    })
+  // Chat connection status
+  chatClient.connection.onStatusChange((change) => {
+    console.log(`Chat connection status is currently ${change.current}!`)
   })
+
+  return { realtime: realtimeClient, chat: chatClient }
 }
 
-export async function publishToChannel(
-  channelName: string,
-  messageType: string,
-  data: any
-): Promise<void> {
-  const channel = getChannel(channelName)
-  if (!channel) {
-    throw new Error(`Failed to get channel: ${channelName}`)
+export async function getChatRoom(roomId: string) {
+  if (!chatClient) {
+    throw new Error('Chat client not initialized')
   }
 
-  await channel.publish(messageType, data)
+  if (!chatRooms.has(roomId)) {
+    const room = await chatClient.rooms.get(roomId)
+    await room.attach()
+    chatRooms.set(roomId, room)
+  }
+
+  return chatRooms.get(roomId)
 }
 
-export async function unsubscribeFromChannel(channelName: string): Promise<void> {
-  const channel = getChannel(channelName)
-  if (channel) {
-    channel.detach()
-    ablyChannels.delete(channelName)
-  }
+export async function subscribeToMessages(
+  roomId: string,
+  callback: (message: ChatMessageEvent) => void
+) {
+  const room = await getChatRoom(roomId)
+  
+  const { historyBeforeSubscribe } = room.messages.subscribe(callback)
+  
+  // Return historical messages
+  const historicalMessages = await historyBeforeSubscribe({ limit: 50 })
+  return historicalMessages.items
 }
 
-export async function disconnectAbly(): Promise<void> {
-  if (ablyClient) {
-    await ablyClient.close()
-    ablyClient = null
-    ablyChannels.clear()
+export async function sendMessage(
+  roomId: string,
+  content: string,
+  metadata?: any
+) {
+  const room = await getChatRoom(roomId)
+  const message = await room.messages.send({ 
+    text: content,
+    metadata: metadata || {}
+  })
+  return message
+}
+
+export async function editMessage(
+  roomId: string,
+  messageSerial: number,
+  newText: string
+) {
+  const room = await getChatRoom(roomId)
+  const updatedMessage = await room.messages.update(messageSerial, { text: newText })
+  return updatedMessage
+}
+
+export async function deleteMessage(roomId: string, messageSerial: number) {
+  const room = await getChatRoom(roomId)
+  await room.messages.delete(messageSerial)
+}
+
+export async function subscribeToTyping(
+  roomId: string,
+  callback: (typingEvent: any) => void
+) {
+  const room = await getChatRoom(roomId)
+  room.typing.subscribe(callback)
+}
+
+export async function sendTyping(roomId: string) {
+  const room = await getChatRoom(roomId)
+  await room.typing.keystroke()
+}
+
+export async function stopTyping(roomId: string) {
+  const room = await getChatRoom(roomId)
+  await room.typing.stop()
+}
+
+export async function subscribeToPresence(
+  roomId: string,
+  callback: (presenceEvent: any) => void
+) {
+  const room = await getChatRoom(roomId)
+  room.presence.subscribe(callback)
+}
+
+export async function enterPresence(roomId: string, data?: any) {
+  const room = await getChatRoom(roomId)
+  await room.presence.enter(data || "I'm here!")
+}
+
+export async function leavePresence(roomId: string, data?: any) {
+  const room = await getChatRoom(roomId)
+  await room.presence.leave(data || "I'm leaving!")
+}
+
+export async function updatePresence(roomId: string, data: any) {
+  const room = await getChatRoom(roomId)
+  await room.presence.update(data)
+}
+
+export async function subscribeToReactions(
+  roomId: string,
+  callback: (reactionEvent: any) => void
+) {
+  const room = await getChatRoom(roomId)
+  room.reactions.subscribe(callback)
+}
+
+export async function addReaction(
+  roomId: string,
+  messageId: number,
+  reaction: string
+) {
+  const room = await getChatRoom(roomId)
+  await room.reactions.add(messageId, reaction)
+}
+
+export async function getRoomHistory(roomId: string, limit: number = 50) {
+  const room = await getChatRoom(roomId)
+  const history = await room.messages.history({ limit })
+  return history.items
+}
+
+export async function getCurrentTyping(roomId: string) {
+  const room = await getChatRoom(roomId)
+  const typing = await room.typing.get()
+  return typing.currentlyTyping
+}
+
+export async function getCurrentPresence(roomId: string) {
+  const room = await getChatRoom(roomId)
+  const presence = await room.presence.get()
+  return presence.items
+}
+
+export async function disconnectAbly() {
+  if (realtimeClient) {
+    await realtimeClient.close()
+    realtimeClient = null
   }
+  if (chatClient) {
+    chatClient = null
+  }
+  chatRooms.clear()
 }
 
 // Channel naming conventions
@@ -203,9 +285,6 @@ export const CHANNELS = {
   
   // Global channels: global:{type}
   GLOBAL: (type: string) => `global:${type}`,
-  
-  // Chat channels: chat:{teamId} or chat:{meetingId}
-  CHAT: (id: string) => `chat:${id}`,
 } as const
 
 // Message types
@@ -237,62 +316,97 @@ export const MESSAGE_TYPES = {
   PRESENCE_UPDATE: 'presence_update',
 } as const
 
-// Presence management
-export async function enterPresence(channelName: string, data?: any): Promise<void> {
-  const channel = getChannel(channelName)
-  if (channel) {
-    await channel.presence.enter(data)
+// Enhanced message creation helpers
+export function createChatMessage(
+  content: string,
+  senderId: string,
+  senderName: string,
+  senderAvatar?: string,
+  metadata?: any
+): ChatMessage {
+  return {
+    id: `${Date.now()}-${Math.random()}`,
+    type: 'text',
+    senderId,
+    senderName,
+    senderAvatar,
+    content,
+    timestamp: Date.now(),
+    channelId: '',
+    metadata
   }
 }
 
-export async function leavePresence(channelName: string): Promise<void> {
-  const channel = getChannel(channelName)
-  if (channel) {
-    await channel.presence.leave()
+export function createSystemMessage(
+  content: string,
+  channelId: string
+): ChatMessage {
+  return {
+    id: `${Date.now()}-${Math.random()}`,
+    type: 'system',
+    senderId: 'system',
+    senderName: 'System',
+    content,
+    timestamp: Date.now(),
+    channelId,
   }
 }
 
-export async function updatePresence(channelName: string, data: any): Promise<void> {
-  const channel = getChannel(channelName)
-  if (channel) {
-    await channel.presence.update(data)
-  }
-}
+// Typing management
+export class TypingManager {
+  private timeouts: Map<string, NodeJS.Timeout> = new Map()
+  private typingUsers: Set<string> = new Set()
 
-export async function getPresence(channelName: string): Promise<Ably.PresenceMessage[]> {
-  const channel = getChannel(channelName)
-  if (!channel) {
-    return []
-  }
+  constructor(
+    private roomId: string,
+    private currentUserId: string,
+    private onTypingChange: (users: string[]) => void
+  ) {}
 
-  return new Promise((resolve, reject) => {
-    channel.presence.get((err, messages) => {
-      if (err) {
-        reject(err)
-      } else {
-        resolve(messages || [])
-      }
-    })
-  })
-}
+  async startTyping() {
+    if (!this.typingUsers.has(this.currentUserId)) {
+      this.typingUsers.add(this.currentUserId)
+      await sendTyping(this.roomId)
+      this.onTypingChange(Array.from(this.typingUsers))
+    }
 
-// History management
-export async function getChannelHistory(
-  channelName: string,
-  limit: number = 50
-): Promise<Ably.Message[]> {
-  const channel = getChannel(channelName)
-  if (!channel) {
-    return []
+    // Clear existing timeout
+    const existingTimeout = this.timeouts.get(this.currentUserId)
+    if (existingTimeout) {
+      clearTimeout(existingTimeout)
+    }
+
+    // Set new timeout to stop typing
+    const timeout = setTimeout(() => {
+      this.stopTyping()
+    }, 1000)
+
+    this.timeouts.set(this.currentUserId, timeout)
   }
 
-  return new Promise((resolve, reject) => {
-    channel.history({ limit }, (err, page) {
-      if (err) {
-        reject(err)
-      } else {
-        resolve(page?.items || [])
-      }
-    })
-  })
+  async stopTyping() {
+    if (this.typingUsers.has(this.currentUserId)) {
+      this.typingUsers.delete(this.currentUserId)
+      await stopTyping(this.roomId)
+      this.onTypingChange(Array.from(this.typingUsers))
+    }
+
+    const timeout = this.timeouts.get(this.currentUserId)
+    if (timeout) {
+      clearTimeout(timeout)
+      this.timeouts.delete(this.currentUserId)
+    }
+  }
+
+  handleTypingEvent(typingEvent: any) {
+    const currentlyTyping = typingEvent.currentlyTyping || new Set()
+    this.typingUsers = new Set(currentlyTyping)
+    this.onTypingChange(Array.from(this.typingUsers))
+  }
+
+  cleanup() {
+    this.timeouts.forEach(timeout => clearTimeout(timeout))
+    this.timeouts.clear()
+    this.typingUsers.clear()
+  }
 }

@@ -10,6 +10,7 @@
     "seed:patiala-colleges": "node scripts/seed-patiala-colleges.js"
   },
   "dependencies": {
+    "@ably/chat": "^1.1.1",
     "@supabase/supabase-js": "^2.35.0",
     "ably": "^2.17.1",
     "browser-image-compression": "^2.0.2",

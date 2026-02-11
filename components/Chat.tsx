@@ -1,18 +1,25 @@
 import { useEffect, useRef, useState } from 'react'
-import { Avatar } from './Avatar'
+import Avatar from './Avatar'
 import { LoaderIcon } from './Icons'
 import { 
   initializeAbly, 
-  subscribeToChannel, 
-  publishToChannel, 
-  getChannelHistory,
+  subscribeToMessages,
+  sendMessage as sendAblyMessage,
+  editMessage,
+  deleteMessage,
+  subscribeToTyping,
+  sendTyping,
+  stopTyping,
+  subscribeToPresence,
   enterPresence,
   leavePresence,
-  getPresence,
-  CHANNELS,
-  MESSAGE_TYPES,
-  ChatMessage 
+  subscribeToReactions,
+  addReaction,
+  TypingManager,
+  createChatMessage,
+  createSystemMessage
 } from '../lib/ably'
+import type { ChatMessageEvent } from '@ably/chat'
 
 interface ChatProps {
   channelId: string
@@ -33,90 +40,116 @@ export default function Chat({
   placeholder = "Type a message...",
   disabled = false
 }: ChatProps) {
-  const [messages, setMessages] = useState<ChatMessage[]>([])
+  const [messages, setMessages] = useState<any[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [typingUsers, setTypingUsers] = useState<string[]>([])
   const [onlineUsers, setOnlineUsers] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isConnected, setIsConnected] = useState(false)
+  const [typingManager, setTypingManager] = useState<TypingManager | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const typingTimeoutRef = useRef<NodeJS.Timeout>()
-
-  const channelName = channelType === 'team' 
-    ? CHANNELS.TEAM(channelId)
-    : CHANNELS.MEETING(channelId)
 
   useEffect(() => {
-    // Initialize Ably client
-    const ablyClient = initializeAbly(
-      process.env.NEXT_PUBLIC_ABLY_CLIENT_KEY || '',
-      currentUserId
-    )
-
-    // Setup connection handlers
-    ablyClient.connection.on('connected', () => {
-      setIsConnected(true)
-      setIsLoading(false)
-    })
-
-    ablyClient.connection.on('disconnected', () => {
-      setIsConnected(false)
-    })
-
-    // Enter presence
-    enterPresence(channelName, {
-      userId: currentUserId,
-      userName: currentUserName,
-      userAvatar: currentUserAvatar,
-      status: 'online'
-    })
-
-    // Subscribe to messages
-    const setupSubscriptions = async () => {
+    const setupChat = async () => {
       try {
-        // Subscribe to chat messages
-        await subscribeToChannel(channelName, (message) => {
-          switch (message.type) {
-            case MESSAGE_TYPES.CHAT_MESSAGE:
-              setMessages(prev => [...prev, message.data as ChatMessage])
-              scrollToBottom()
-              break
+        setIsLoading(true)
 
-            case MESSAGE_TYPES.CHAT_TYPING:
-              const typingUser = message.data.userName
-              setTypingUsers(prev => {
-                if (!prev.includes(typingUser)) {
-                  return [...prev, typingUser]
-                }
-                return prev
-              })
-              break
+        // Initialize Ably with Chat SDK
+        const { realtime, chat } = await initializeAbly(
+          process.env.NEXT_PUBLIC_ABLY_CLIENT_KEY || '',
+          currentUserId
+        )
 
-            case MESSAGE_TYPES.CHAT_READ:
-              // Handle read receipts
-              break
-
-            case MESSAGE_TYPES.PRESENCE_ENTER:
-            case MESSAGE_TYPES.PRESENCE_LEAVE:
-              // Update online users
-              updateOnlineUsers()
-              break
+        // Connection handlers
+        chat.connection.onStatusChange((change) => {
+          console.log(`Chat connection status is currently ${change.current}!`)
+          setIsConnected(change.current === 'connected')
+          if (change.current === 'connected') {
+            setIsLoading(false)
           }
         })
 
-        // Load message history
-        const history = await getChannelHistory(channelName, 50)
-        const chatMessages = history
-          .filter(msg => msg.name === MESSAGE_TYPES.CHAT_MESSAGE)
-          .map(msg => msg.data as ChatMessage)
-          .sort((a, b) => a.timestamp - b.timestamp)
+        // Get chat room
+        const roomId = channelType === 'team' ? `team:${channelId}` : `meeting:${channelId}`
+        
+        // Enter presence
+        await enterPresence(roomId, {
+          userId: currentUserId,
+          userName: currentUserName,
+          userAvatar: currentUserAvatar,
+          status: 'online'
+        })
 
-        setMessages(chatMessages)
+        // Subscribe to messages
+        const historicalMessages = await subscribeToMessages(roomId, (messageEvent: ChatMessageEvent) => {
+          const message = {
+            id: messageEvent.message.serial.toString(),
+            type: 'text',
+            senderId: messageEvent.message.clientId,
+            senderName: messageEvent.message.clientId === currentUserId ? currentUserName : messageEvent.message.clientId,
+            senderAvatar: messageEvent.message.clientId === currentUserId ? currentUserAvatar : undefined,
+            content: messageEvent.message.text,
+            timestamp: messageEvent.message.timestamp,
+            channelId,
+            metadata: messageEvent.message.metadata || {}
+          }
+          
+          setMessages(prev => {
+            const filtered = prev.filter((m: any) => m.id !== message.id)
+            return [...filtered, message].sort((a: any, b: any) => a.timestamp - b.timestamp)
+          })
+          scrollToBottom()
+        })
+
+        // Load historical messages
+        const formattedHistory = historicalMessages.map((msg: any) => ({
+          id: msg.serial.toString(),
+          type: 'text',
+          senderId: msg.clientId,
+          senderName: msg.clientId === currentUserId ? currentUserName : msg.clientId,
+          senderAvatar: msg.clientId === currentUserId ? currentUserAvatar : undefined,
+          content: msg.text,
+          timestamp: msg.timestamp,
+          channelId,
+          metadata: msg.metadata || {}
+        })).sort((a: any, b: any) => a.timestamp - b.timestamp)
+
+        setMessages(formattedHistory)
         scrollToBottom()
 
-        // Get initial presence
-        updateOnlineUsers()
+        // Subscribe to typing
+        await subscribeToTyping(roomId, (typingEvent: any) => {
+          if (typingEvent.currentlyTyping.size === 0) {
+            setTypingUsers([])
+          } else {
+            setTypingUsers(Array.from(typingEvent.currentlyTyping))
+          }
+        })
+
+        // Subscribe to presence
+        await subscribeToPresence(roomId, (presenceEvent: any) => {
+          const { clientId, data } = presenceEvent.member
+          console.log(`Presence event: ${presenceEvent.type} from ${clientId} with data ${JSON.stringify(data)}`)
+          
+          // Update online users list
+          if (presenceEvent.type === 'enter' || presenceEvent.type === 'leave') {
+            // You might want to fetch updated presence here
+          }
+        })
+
+        // Subscribe to reactions
+        await subscribeToReactions(roomId, (reactionEvent: any) => {
+          console.log(`${reactionEvent.reaction.clientId}: ${reactionEvent.reaction.name} to that!`)
+        })
+
+        // Setup typing manager
+        const manager = new TypingManager(
+          roomId,
+          currentUserId,
+          (users) => setTypingUsers(users.filter((u: string) => u !== currentUserName))
+        )
+        setTypingManager(manager)
 
       } catch (error) {
         console.error('Error setting up chat:', error)
@@ -124,25 +157,16 @@ export default function Chat({
       }
     }
 
-    setupSubscriptions()
+    setupChat()
 
     return () => {
       // Cleanup
-      leavePresence(channelName)
+      if (typingManager) {
+        typingManager.cleanup()
+      }
+      leavePresence(channelType === 'team' ? `team:${channelId}` : `meeting:${channelId}`)
     }
-  }, [channelName, currentUserId, currentUserName, currentUserAvatar])
-
-  const updateOnlineUsers = async () => {
-    try {
-      const presence = await getPresence(channelName)
-      const users = presence
-        .map(p => p.data?.userName)
-        .filter(Boolean)
-      setOnlineUsers(users)
-    } catch (error) {
-      console.error('Error getting presence:', error)
-    }
-  }
+  }, [channelId, channelType, currentUserId, currentUserName, currentUserAvatar])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -151,53 +175,60 @@ export default function Chat({
   const handleTyping = (value: string) => {
     setNewMessage(value)
 
-    if (value.trim()) {
-      if (!isTyping) {
-        setIsTyping(true)
-        publishToChannel(channelName, MESSAGE_TYPES.CHAT_TYPING, {
-          userName: currentUserName,
-          userId: currentUserId
-        })
+    if (typingManager) {
+      if (value.trim()) {
+        typingManager.startTyping()
+      } else {
+        typingManager.stopTyping()
       }
-
-      // Clear existing timeout
-      if (typingTimeoutRef.current) {
-        clearTimeout(typingTimeoutRef.current)
-      }
-
-      // Set new timeout to stop typing indicator
-      typingTimeoutRef.current = setTimeout(() => {
-        setIsTyping(false)
-      }, 1000)
-    } else {
-      setIsTyping(false)
     }
   }
 
-  const sendMessage = async (e: React.FormEvent) => {
+  const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!newMessage.trim() || !isConnected || disabled) {
       return
     }
 
-    const message: ChatMessage = {
-      id: `${Date.now()}-${Math.random()}`,
-      type: 'text',
-      senderId: currentUserId,
-      senderName: currentUserName,
-      senderAvatar: currentUserAvatar,
-      content: newMessage.trim(),
-      timestamp: Date.now(),
-      channelId
-    }
-
     try {
-      await publishToChannel(channelName, MESSAGE_TYPES.CHAT_MESSAGE, message)
+      const roomId = channelType === 'team' ? `team:${channelId}` : `meeting:${channelId}`
+      await sendAblyMessage(roomId, newMessage.trim())
+      
       setNewMessage('')
-      setIsTyping(false)
+      
+      if (typingManager) {
+        typingManager.stopTyping()
+      }
     } catch (error) {
       console.error('Error sending message:', error)
+    }
+  }
+
+  const handleEditMessage = async (messageId: string, newText: string) => {
+    try {
+      const roomId = channelType === 'team' ? `team:${channelId}` : `meeting:${channelId}`
+      await editMessage(roomId, parseInt(messageId), newText)
+    } catch (error) {
+      console.error('Error editing message:', error)
+    }
+  }
+
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      const roomId = channelType === 'team' ? `team:${channelId}` : `meeting:${channelId}`
+      await deleteMessage(roomId, parseInt(messageId))
+    } catch (error) {
+      console.error('Error deleting message:', error)
+    }
+  }
+
+  const handleAddReaction = async (messageId: string, reaction: string) => {
+    try {
+      const roomId = channelType === 'team' ? `team:${channelId}` : `meeting:${channelId}`
+      await addReaction(roomId, parseInt(messageId), reaction)
+    } catch (error) {
+      console.error('Error adding reaction:', error)
     }
   }
 
@@ -266,6 +297,22 @@ export default function Chat({
                     <span className="rn-message-time">{formatTime(message.timestamp)}</span>
                   </div>
                   <div className="rn-message-text">{message.content}</div>
+                  {message.senderId === currentUserId && (
+                    <div className="rn-message-actions">
+                      <button
+                        onClick={() => handleEditMessage(message.id, message.content)}
+                        className="rn-message-action-btn"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDeleteMessage(message.id)}
+                        className="rn-message-action-btn"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
@@ -287,7 +334,7 @@ export default function Chat({
       </div>
 
       {/* Message Input */}
-      <form onSubmit={sendMessage} className="rn-chat-input">
+      <form onSubmit={handleSendMessage} className="rn-chat-input">
         <div className="rn-input-wrapper">
           <input
             type="text"
