@@ -222,7 +222,7 @@ export default function TeamDetailPage() {
           </div>
           <div className="rn-team-details">
             <h1>{team.name}</h1>
-            <p>{team.description || 'No description available'}</p>
+            <p>Team collaboration and networking</p>
           </div>
         </div>
         {!isMember && currentUser && (

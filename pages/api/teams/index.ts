@@ -19,7 +19,6 @@ export default async function handler(
         .select(`
           id,
           name,
-          description,
           max_members,
           created_by,
           created_at,
@@ -55,7 +54,7 @@ export default async function handler(
   } else if (req.method === 'POST') {
     // Create a team
     try {
-      const { name, description, college_id, created_by } = req.body
+      const { name, college_id, created_by } = req.body
 
       if (!name || !college_id || !created_by) {
         return res
@@ -67,7 +66,6 @@ export default async function handler(
         .from('teams')
         .insert({
           name,
-          description: description || '',
           college_id,
           created_by,
           max_members: 5,
