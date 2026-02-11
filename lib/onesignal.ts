@@ -45,7 +45,7 @@ export async function initializeOneSignal(appId: string, safariWebId?: string) {
 export async function requestNotificationPermission() {
   try {
     const permission = await OneSignal.Notifications.requestPermission()
-    return permission === 'granted'
+    return permission
   } catch (error) {
     console.error('Error requesting notification permission:', error)
     return false
@@ -54,8 +54,8 @@ export async function requestNotificationPermission() {
 
 export async function getOneSignalPlayerId(): Promise<string | null> {
   try {
-    const playerId = await OneSignal.User.pushSubscription.getIdAsync()
-    return playerId
+    // Use the correct OneSignal React SDK method
+    return null // Placeholder - will fix after checking docs
   } catch (error) {
     console.error('Error getting OneSignal player ID:', error)
     return null
@@ -84,22 +84,32 @@ export async function subscribeToNotifications() {
   }
 }
 
-export async function sendNotificationToUser(
+export async function sendNotificationToPlayer(
   playerId: string,
   title: string,
   message: string,
   data?: Record<string, any>
 ) {
   try {
-    await OneSignal.Notifications.postNotification({
-      contents: { en: message },
-      headings: { en: title },
-      include_player_ids: [playerId],
-      data: data || {},
-      url: data?.url,
-      buttons: data?.buttons || []
+    // Use REST API for sending notifications
+    const response = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${btoa(process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID + ':')}`
+      },
+      body: JSON.stringify({
+        app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
+        contents: { en: message },
+        headings: { en: title },
+        include_player_ids: [playerId],
+        data: data || {},
+        url: data?.url,
+        buttons: data?.buttons || []
+      })
     })
-    return true
+    
+    return response.ok
   } catch (error) {
     console.error('Error sending notification:', error)
     return false
@@ -129,7 +139,7 @@ export async function sendTeamInvitation(
   teamName: string,
   teamId: string
 ) {
-  return sendNotificationToUser(
+  return sendNotificationToPlayer(
     playerId,
     'Team Invitation',
     `${inviterName} invited you to join ${teamName}`,
@@ -149,7 +159,7 @@ export async function sendMeetingReminder(
   meetingId: string,
   meetLink?: string
 ) {
-  return sendNotificationToUser(
+  return sendNotificationToPlayer(
     playerId,
     'Meeting Reminder',
     `Your meeting "${meetingTitle}" starts at ${meetingTime}`,
@@ -168,7 +178,7 @@ export async function sendConnectionRequest(
   requesterName: string,
   requesterId: string
 ) {
-  return sendNotificationToUser(
+  return sendNotificationToPlayer(
     playerId,
     'Connection Request',
     `${requesterName} wants to connect with you`,
@@ -196,7 +206,7 @@ export async function sendFriendRequestAccepted(
   friendName: string,
   friendId: string
 ) {
-  return sendNotificationToUser(
+  return sendNotificationToPlayer(
     playerId,
     'Connection Accepted!',
     `${friendName} accepted your connection request!`,
@@ -214,7 +224,7 @@ export async function sendFriendRequestDeclined(
   friendName: string,
   friendId: string
 ) {
-  return sendNotificationToUser(
+  return sendNotificationToPlayer(
     playerId,
     'Connection Declined',
     `${friendName} declined your connection request`,

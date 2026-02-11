@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { supabase } from '../../../lib/supabaseClient'
-import { sendTeamInvitation, sendMeetingReminder, sendConnectionRequest } from '../../../lib/onesignal'
+import { sendTeamInvitation, sendMeetingReminder, sendConnectionRequest, sendNotificationToPlayer } from '../../../lib/onesignal'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -65,19 +65,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         break
 
       case 'connection_accepted':
-        success = await sendFriendRequestAccepted(
+        success = await sendNotificationToPlayer(
           recipient.onesignal_player_id,
-          data.friendName,
-          data.friendId
+          'Connection Accepted!',
+          `${data.friendName} accepted your connection request!`,
+          {
+            type: 'connection_accepted',
+            userId: data.friendId,
+            url: `/profile/${data.friendId}`,
+            action: 'view_profile'
+          }
         )
         message = 'Connection accepted notification sent'
         break
 
       case 'connection_declined':
-        success = await sendFriendRequestDeclined(
+        success = await sendNotificationToPlayer(
           recipient.onesignal_player_id,
-          data.friendName,
-          data.friendId
+          'Connection Declined',
+          `${data.friendName} declined your connection request`,
+          {
+            type: 'connection_declined',
+            userId: data.friendId,
+            url: '/connections',
+            action: 'view_connections'
+          }
         )
         message = 'Connection declined notification sent'
         break

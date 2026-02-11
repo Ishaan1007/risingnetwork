@@ -4,7 +4,6 @@ import { supabase } from '../../lib/supabaseClient'
 import Avatar from '../../components/Avatar'
 import Chat from '../../components/Chat'
 import { LoaderIcon } from '../../components/Icons'
-import '../../styles/chat.css'
 
 type Team = {
   id: string

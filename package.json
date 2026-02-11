@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "seed:patiala-colleges": "node scripts/seed-patiala-colleges.js"
+    "seed:patiala-colleges": "node scripts/seed-patiala-colleges.js",
+    "generate-sitemap": "node scripts/generate-sitemap.js",
+    "seo": "npm run generate-sitemap && npm run build"
   },
   "dependencies": {
     "@ably/chat": "^1.1.1",

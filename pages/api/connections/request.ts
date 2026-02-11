@@ -40,8 +40,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .from('connections')
       .select('*')
       .or(
-        (requester_id.eq(requesterId) && recipient_id.eq(recipientId)),
-        (requester_id.eq(recipientId) && recipient_id.eq(requesterId))
+        (requesterId.eq(requesterId) && recipientId.eq(recipientId)),
+        (requesterId.eq(recipientId) && recipientId.eq(requesterId))
       )
       .single()
 

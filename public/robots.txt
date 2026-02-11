@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+
+# Primary domain
+Sitemap: https://risingnetwork.com/sitemap.xml
+
+# Regional domain (if separate)
+Sitemap: https://risingnetwork.in/sitemap-in.xml
