@@ -61,7 +61,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           data.requesterName,
           data.requesterId
         )
-        message = 'Connection request sent successfully'
+        message = 'Friend request sent successfully'
+        break
+
+      case 'connection_accepted':
+        success = await sendFriendRequestAccepted(
+          recipient.onesignal_player_id,
+          data.friendName,
+          data.friendId
+        )
+        message = 'Connection accepted notification sent'
+        break
+
+      case 'connection_declined':
+        success = await sendFriendRequestDeclined(
+          recipient.onesignal_player_id,
+          data.friendName,
+          data.friendId
+        )
+        message = 'Connection declined notification sent'
         break
 
       default:

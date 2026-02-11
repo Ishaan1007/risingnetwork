@@ -19,6 +19,22 @@ self.addEventListener('notificationclick', (event) => {
     event.waitUntil(
       clients.openWindow(data.url || '/connections')
     )
+  } else if (data.type === 'connection_accepted') {
+    event.waitUntil(
+      clients.openWindow(data.url || `/profile/${data.userId}`)
+    )
+  } else if (data.type === 'connection_declined') {
+    event.waitUntil(
+      clients.openWindow(data.url || '/connections')
+    )
+  } else if (data.action === 'accept_connection') {
+    event.waitUntil(
+      clients.openWindow(`/api/connections/accept?requesterId=${data.userId}`)
+    )
+  } else if (data.action === 'decline_connection') {
+    event.waitUntil(
+      clients.openWindow(`/api/connections/decline?requesterId=${data.userId}`)
+    )
   } else {
     // Default to home page
     event.waitUntil(

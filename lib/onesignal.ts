@@ -12,10 +12,11 @@ export interface OneSignalInitOptions {
   }
 }
 
-export async function initializeOneSignal(appId: string) {
+export async function initializeOneSignal(appId: string, safariWebId?: string) {
   try {
     await OneSignal.init({
       appId,
+      safari_web_id: safariWebId,
       notifyButton: {
         enable: true,
       },
@@ -47,7 +48,7 @@ export async function requestNotificationPermission() {
 
 export async function getOneSignalPlayerId(): Promise<string | null> {
   try {
-    const playerId = await OneSignal.getUserId()
+    const playerId = await OneSignal.User.pushSubscription.getIdAsync()
     return playerId
   } catch (error) {
     console.error('Error getting OneSignal player ID:', error)
@@ -84,7 +85,7 @@ export async function sendNotificationToUser(
   data?: Record<string, any>
 ) {
   try {
-    await OneSignal.postNotification({
+    await OneSignal.Notifications.postNotification({
       contents: { en: message },
       headings: { en: title },
       include_player_ids: [playerId],
@@ -168,7 +169,53 @@ export async function sendConnectionRequest(
     {
       type: 'connection_request',
       userId: requesterId,
-      url: `/connections`,
+      url: '/connections',
+      action: 'view_connections',
+      buttons: [
+        {
+          text: 'Accept',
+          action: 'accept_connection'
+        },
+        {
+          text: 'Decline',
+          action: 'decline_connection'
+        }
+      ]
+    }
+  )
+}
+
+export async function sendFriendRequestAccepted(
+  playerId: string,
+  friendName: string,
+  friendId: string
+) {
+  return sendNotificationToUser(
+    playerId,
+    'Connection Accepted!',
+    `${friendName} accepted your connection request!`,
+    {
+      type: 'connection_accepted',
+      userId: friendId,
+      url: `/profile/${friendId}`,
+      action: 'view_profile'
+    }
+  )
+}
+
+export async function sendFriendRequestDeclined(
+  playerId: string,
+  friendName: string,
+  friendId: string
+) {
+  return sendNotificationToUser(
+    playerId,
+    'Connection Declined',
+    `${friendName} declined your connection request`,
+    {
+      type: 'connection_declined',
+      userId: friendId,
+      url: '/connections',
       action: 'view_connections'
     }
   )
