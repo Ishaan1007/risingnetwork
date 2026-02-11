@@ -16,22 +16,7 @@ export default async function handler(
 
       const { data, error } = await supabaseServer
         .from('teams')
-        .select(`
-          id,
-          name,
-          max_members,
-          created_by,
-          created_at,
-          team_members!team_members_team_id_fkey (
-            id,
-            user_id,
-            status,
-            profiles!team_members_user_id_fkey (
-              first_name,
-              last_name
-            )
-          )
-        `)
+        .select('*')
         .eq('college_id', college_id)
         .order('created_at', { ascending: false })
 
@@ -41,10 +26,8 @@ export default async function handler(
 
       const transformed = (data || []).map((team: any) => ({
         ...team,
-        member_count: team.team_members.filter(
-          (tm: any) => tm.status === 'accepted'
-        ).length,
-        members: team.team_members.filter((tm: any) => tm.status === 'accepted'),
+        member_count: 0, // Will be updated later
+        members: [], // Will be updated later
       }))
 
       return res.status(200).json({ teams: transformed })
