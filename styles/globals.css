@@ -1460,10 +1460,224 @@ pre {
 
 
 
-.rn-profile-title {
-  font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif;
-  font-size: 22px;
-  margin-bottom: 20px;
+/* Chat Component Styles */
+.rn-chat-wrapper {
+  height: 500px;
+  border: 1px solid var(--rn-line);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.rn-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--rn-line);
+  margin-bottom: 18px;
+}
+
+.rn-tab {
+  background: transparent;
+  border: none;
+  padding: 10px 2px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--rn-muted);
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rn-tab.is-active {
+  color: var(--rn-blue);
+  border-color: var(--rn-blue);
+}
+
+.rn-tab:hover {
+  color: var(--rn-blue);
+}
+
+.rn-tab-content {
+  min-height: 400px;
+}
+
+/* Team and Meeting Pages */
+.rn-main-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.rn-team-stats {
+  display: flex;
+  gap: 24px;
+  margin: 16px 0;
+}
+
+.rn-stat {
+  text-align: center;
+}
+
+.rn-stat-number {
+  display: block;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--rn-blue);
+  margin-bottom: 4px;
+}
+
+.rn-stat-label {
+  font-size: 12px;
+  color: var(--rn-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rn-meeting-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rn-status-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.rn-status-btn {
+  padding: 8px 12px;
+  border: 1px solid var(--rn-line);
+  background: var(--rn-surface);
+  color: var(--rn-muted);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rn-status-btn.active {
+  background: var(--rn-blue);
+  color: white;
+  border-color: var(--rn-blue);
+}
+
+.rn-status-btn:hover:not(.active) {
+  border-color: var(--rn-blue);
+  color: var(--rn-blue);
+}
+
+.rn-meeting-details {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rn-detail-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rn-detail-item label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--rn-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rn-detail-item span {
+  font-size: 14px;
+  color: var(--rn-ink);
+}
+
+.rn-meeting-status {
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid var(--rn-line);
+}
+
+.rn-meeting-status h4 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.rn-status-active {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #10b981;
+  font-weight: 600;
+}
+
+.rn-status-upcoming {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #f59e0b;
+  font-weight: 600;
+}
+
+.rn-status-ended {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.rn-members-list,
+.rn-meetings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rn-members-list h3,
+.rn-meetings-list h3 {
+  font-size: 16px;
+  margin: 0;
+}
+
+.rn-badge.accepted {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.rn-badge.declined {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.rn-badge.tentative {
+  background: #fef3c7;
+  color: #d97706;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .rn-layout {
+    grid-template-columns: 1fr;
+  }
+  
+  .rn-chat-wrapper {
+    height: 400px;
+  }
+  
+  .rn-team-stats {
+    gap: 16px;
+  }
+  
+  .rn-meeting-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .rn-status-buttons {
+    justify-content: center;
+  }
 }
 
 .rn-profile-edit-header {
