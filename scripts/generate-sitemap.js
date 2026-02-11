@@ -3,7 +3,7 @@ const path = require('path');
 
 // Define your domains
 const DOMAINS = {
-  primary: 'https://risingnetwork.com',
+  primary: 'https://risingnetwork.in',
   regional: 'https://risingnetwork.in'
 };
 
@@ -44,9 +44,9 @@ function writeSitemaps() {
   // Primary domain sitemap
   const primarySitemap = generateSitemap(DOMAINS.primary);
   fs.writeFileSync(path.join(__dirname, '../public/sitemap.xml'), primarySitemap);
-  console.log('✅ Generated sitemap.xml for risingnetwork.com');
+  console.log('✅ Generated sitemap.xml for risingnetwork.in');
 
-  // Regional domain sitemap (optional)
+  // Regional domain sitemap (same as primary)
   const regionalSitemap = generateSitemap(DOMAINS.regional);
   fs.writeFileSync(path.join(__dirname, '../public/sitemap-in.xml'), regionalSitemap);
   console.log('✅ Generated sitemap-in.xml for risingnetwork.in');
@@ -56,9 +56,9 @@ function writeSitemaps() {
 Allow: /
 
 # Primary domain
-Sitemap: https://risingnetwork.com/sitemap.xml
+Sitemap: https://risingnetwork.in/sitemap.xml
 
-# Regional domain (if separate)
+# Regional domain (same as primary)
 Sitemap: https://risingnetwork.in/sitemap-in.xml`;
   
   fs.writeFileSync(path.join(__dirname, '../public/robots.txt'), robotsTxt);
@@ -69,7 +69,6 @@ Sitemap: https://risingnetwork.in/sitemap-in.xml`;
 writeSitemaps();
 console.log('🎉 SEO files generated successfully!');
 console.log('\n📋 Next steps:');
-console.log('1. Upload sitemap.xml to risingnetwork.com root');
-console.log('2. Set up domain forwarding: risingnetwork.in → risingnetwork.com');
-console.log('3. Submit sitemaps to Google Search Console');
-console.log('4. Monitor SEO performance');
+console.log('1. Upload sitemap.xml to risingnetwork.in root');
+console.log('2. Submit sitemap to Google Search Console');
+console.log('3. Monitor SEO performance');

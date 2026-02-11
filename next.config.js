@@ -26,11 +26,6 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'risingnetwork.com',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
         hostname: 'risingnetwork.in',
         pathname: '/**',
       }

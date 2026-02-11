@@ -22,29 +22,29 @@ function App({ Component, pageProps }: AppProps) {
   return (
     <>
       <Head>
-        <title>RisingNetwork - Professional College Networking Platform</title>
-        <meta name="description" content="Connect with college students, join teams, schedule meetings, and build your professional network on RisingNetwork." />
-        <meta name="keywords" content="college networking, student connections, team collaboration, professional networking, campus network, rising network" />
-        <meta name="author" content="RisingNetwork" />
+        <title>RisingNetwork.in - Professional College Networking Platform</title>
+        <meta name="description" content="Connect with college students, join teams, schedule meetings, and build your professional network on RisingNetwork.in - India's leading college networking platform." />
+        <meta name="keywords" content="college networking India, student connections, team collaboration, professional networking, campus network, rising network, Indian colleges" />
+        <meta name="author" content="RisingNetwork.in" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta charSet="utf-8" />
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="website" />
-        <meta property="og:title" content="RisingNetwork - Professional College Networking" />
-        <meta property="og:description" content="Join the ultimate college networking platform for students and professionals." />
-        <meta property="og:image" content="https://risingnetwork.com/og-image.jpg" />
-        <meta property="og:url" content="https://risingnetwork.com" />
-        <meta property="og:site_name" content="RisingNetwork" />
+        <meta property="og:title" content="RisingNetwork.in - Professional College Networking" />
+        <meta property="og:description" content="Join India's leading college networking platform for students and professionals." />
+        <meta property="og:image" content="https://risingnetwork.in/og-image.jpg" />
+        <meta property="og:url" content="https://risingnetwork.in" />
+        <meta property="og:site_name" content="RisingNetwork.in" />
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="RisingNetwork - Professional College Networking" />
-        <meta name="twitter:description" content="Join the ultimate college networking platform for students." />
-        <meta name="twitter:image" content="https://risingnetwork.com/twitter-image.jpg" />
+        <meta name="twitter:title" content="RisingNetwork.in - Professional College Networking" />
+        <meta name="twitter:description" content="Join India's leading college networking platform for students." />
+        <meta name="twitter:image" content="https://risingnetwork.in/twitter-image.jpg" />
         
         {/* Canonical URL */}
-        <link rel="canonical" href="https://risingnetwork.com" />
+        <link rel="canonical" href="https://risingnetwork.in" />
         
         {/* Favicon */}
         <link rel="icon" href="/favicon.ico" />
