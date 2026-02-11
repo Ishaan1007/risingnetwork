@@ -10,11 +10,11 @@ type Profile = {
   first_name: string
   last_name: string
   city: string
-  role: 'student' | 'freelancer' | 'teacher' | null
+  role?: 'student' | 'freelancer' | 'teacher' | null
   bio: string
-  linkedin_url?: string
-  github_url?: string
-  portfolio_url?: string
+  linkedin_url?: string | undefined
+  github_url?: string | undefined
+  portfolio_url?: string | undefined
   avatar_url?: string | null
 }
 
@@ -153,19 +153,19 @@ export default function Profile() {
     return () => subscription?.unsubscribe()
   }, [router])
 
-  const handleProfileChange = (field: keyof Profile, value: string) => {
-    setProfile((prev) => {
-      if (!prev) return null
-      const updated = { ...prev, [field]: value }
-      
-      // Track if user has started typing their name
-      if (field === 'first_name' && value.trim().length > 0) {
-        setHasStartedTyping(true)
-      }
-      
-      return updated
-    })
-  }
+  const handleProfileChange = (field: keyof Profile, value: string | null) => {
+  setProfile((prev) => {
+    if (!prev) return null
+    const updated = { ...prev, [field]: value }
+    
+    // Track if user has started typing their name
+    if (field === 'first_name' && value && value.trim().length > 0) {
+      setHasStartedTyping(true)
+    }
+    
+    return updated
+  })
+}
 
   const handleSkillToggle = useCallback((skillId: number) => {
     setSelectedSkillIds((prev) =>
