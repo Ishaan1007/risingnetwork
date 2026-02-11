@@ -16,25 +16,23 @@ export default async function handler(
 
       const { data, error } = await supabaseServer
         .from('teams')
-        .select(
-          `
+        .select(`
           id,
           name,
           description,
           max_members,
           created_by,
           created_at,
-          team_members (
+          team_members!team_members_team_id_fkey (
             id,
             user_id,
             status,
-            profiles (
+            profiles!team_members_user_id_fkey (
               first_name,
               last_name
             )
           )
-        `
-        )
+        `)
         .eq('college_id', college_id)
         .order('created_at', { ascending: false })
 

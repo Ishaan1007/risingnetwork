@@ -86,7 +86,7 @@ export default function TeamDetailPage() {
           .from('team_members')
           .select(`
             *,
-            profiles (
+            profiles!team_members_user_id_fkey (
               id,
               first_name,
               last_name,
