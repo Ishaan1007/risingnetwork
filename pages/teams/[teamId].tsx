@@ -198,9 +198,44 @@ export default function TeamDetailPage() {
   return (
     <div className="rn-shell">
       <div className="rn-teams-header">
-        <div>
-          <h1>{team.name}</h1>
-          <p>{team.description || 'No description available'}</p>
+        <div className="rn-team-info">
+          <div className="rn-team-logo">
+            <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <linearGradient id="teamLogoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#3b82f6" />
+                  <stop offset="100%" stopColor="#1d4ed8" />
+                </linearGradient>
+              </defs>
+              
+              {/* Team circle background */}
+              <circle cx="24" cy="24" r="22" fill="url(#teamLogoGradient)" opacity="0.1" />
+              <circle cx="24" cy="24" r="20" fill="none" stroke="url(#teamLogoGradient)" strokeWidth="2" />
+              
+              {/* Team icon - network nodes */}
+              <circle cx="18" cy="18" r="2.5" fill="url(#teamLogoGradient)" />
+              <circle cx="30" cy="18" r="2.5" fill="url(#teamLogoGradient)" />
+              <circle cx="24" cy="30" r="2.5" fill="url(#teamLogoGradient)" />
+              <circle cx="18" cy="30" r="2" fill="url(#teamLogoGradient)" />
+              <circle cx="30" cy="30" r="2" fill="url(#teamLogoGradient)" />
+              
+              {/* Connection lines */}
+              <line x1="18" y1="18" x2="24" y2="24" stroke="url(#teamLogoGradient)" strokeWidth="1.5" />
+              <line x1="30" y1="18" x2="24" y2="24" stroke="url(#teamLogoGradient)" strokeWidth="1.5" />
+              <line x1="24" y1="24" x2="18" y2="30" stroke="url(#teamLogoGradient)" strokeWidth="1.5" />
+              <line x1="24" y1="24" x2="30" y2="30" stroke="url(#teamLogoGradient)" strokeWidth="1.5" />
+              <line x1="18" y1="30" x2="30" y2="30" stroke="url(#teamLogoGradient)" strokeWidth="1" />
+              
+              {/* Team initials */}
+              <text x="24" y="24" textAnchor="middle" dominantBaseline="middle" fill="url(#teamLogoGradient)" fontSize="12" fontWeight="bold">
+                {team.name.substring(0, 2).toUpperCase()}
+              </text>
+            </svg>
+          </div>
+          <div className="rn-team-details">
+            <h1>{team.name}</h1>
+            <p>{team.description || 'No description available'}</p>
+          </div>
         </div>
         {!isMember && currentUser && (
           <button

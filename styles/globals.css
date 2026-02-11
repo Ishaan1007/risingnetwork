@@ -1094,6 +1094,39 @@ pre {
   margin-bottom: 16px;
 }
 
+.rn-team-info {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.rn-team-logo {
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.1));
+  transition: transform 0.2s ease;
+}
+
+.rn-team-logo:hover {
+  transform: scale(1.05);
+}
+
+.rn-team-details {
+  flex: 1;
+}
+
+.rn-team-details h1 {
+  margin: 0 0 8px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--rn-ink);
+}
+
+.rn-team-details p {
+  margin: 0;
+  color: var(--rn-muted);
+  line-height: 1.5;
+}
+
 .rn-tabs {
   display: flex;
   gap: 24px;
