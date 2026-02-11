@@ -153,7 +153,7 @@ export default function Profile() {
     return () => subscription?.unsubscribe()
   }, [router])
 
-  const handleProfileChange = (field: keyof Profile, value: string | null) => {
+  const handleProfileChange = (field: keyof Profile, value: string | null | undefined) => {
   setProfile((prev) => {
     if (!prev) return null
     const updated = { ...prev, [field]: value }
