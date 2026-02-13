@@ -609,7 +609,7 @@ export default function Profile() {
                 type="button"
                 className="rn-secondary-btn"
                 onClick={handleEnableNotifications}
-                disabled={notificationsLoading || profile.notifications_enabled}
+                disabled={notificationsLoading || Boolean(profile.notifications_enabled)}
               >
                 {notificationsLoading
                   ? 'Enabling...'
