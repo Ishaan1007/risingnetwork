@@ -71,7 +71,9 @@ export default async function handler(
 
     // Send notification to invitee
     try {
-      const { data: recipient } = await supabaseAdmin
+      const { data: recipient }: {
+        data: { onesignal_player_id?: string | null; first_name?: string | null } | null
+      } = await supabaseAdmin
         .from('profiles')
         .select('onesignal_player_id, first_name')
         .eq('id', user_id)

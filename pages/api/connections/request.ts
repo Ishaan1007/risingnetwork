@@ -35,7 +35,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('id', requesterId)
       .single()
 
-    const { data: recipient, error: recipientError } = await supabaseAdmin
+    const { data: recipient, error: recipientError }: {
+      data: { onesignal_player_id?: string | null; first_name?: string | null } | null
+      error: any
+    } = await supabaseAdmin
       .from('profiles')
       .select('first_name, onesignal_player_id')
       .eq('id', recipientId)

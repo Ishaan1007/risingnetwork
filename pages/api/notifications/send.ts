@@ -20,7 +20,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Get recipient's OneSignal player ID
     const supabaseAdmin = getSupabaseAdmin()
-    const { data: recipient, error: recipientError } = await supabaseAdmin
+    const { data: recipient, error: recipientError }: {
+      data: { onesignal_player_id?: string | null; first_name?: string | null } | null
+      error: any
+    } = await supabaseAdmin
       .from('profiles')
       .select('onesignal_player_id, first_name')
       .eq('id', recipientId)
