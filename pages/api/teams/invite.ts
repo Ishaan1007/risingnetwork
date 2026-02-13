@@ -71,17 +71,16 @@ export default async function handler(
 
     // Send notification to invitee
     try {
-      const { data: recipient }: {
-        data: { onesignal_player_id?: string | null; first_name?: string | null } | null
-      } = await supabaseAdmin
+      const { data: recipient } = await supabaseAdmin
         .from('profiles')
         .select('onesignal_player_id, first_name')
         .eq('id', user_id)
         .single()
+      const recipientProfile = recipient as { onesignal_player_id?: string | null; first_name?: string | null } | null
 
-      if (recipient?.onesignal_player_id) {
+      if (recipientProfile?.onesignal_player_id) {
         await sendTeamInvitation(
-          recipient.onesignal_player_id,
+          recipientProfile.onesignal_player_id,
           user.user_metadata?.first_name || 'Someone',
           team.name,
           String(team_id)

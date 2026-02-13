@@ -20,20 +20,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Get recipient's OneSignal player ID
     const supabaseAdmin = getSupabaseAdmin()
-    const { data: recipient, error: recipientError }: {
-      data: { onesignal_player_id?: string | null; first_name?: string | null } | null
-      error: any
-    } = await supabaseAdmin
+    const { data: recipient, error: recipientError } = await supabaseAdmin
       .from('profiles')
       .select('onesignal_player_id, first_name')
       .eq('id', recipientId)
       .single()
+    const recipientProfile = recipient as { onesignal_player_id?: string | null; first_name?: string | null } | null
 
-    if (recipientError || !recipient) {
+    if (recipientError || !recipientProfile) {
       return res.status(404).json({ error: 'Recipient not found' })
     }
 
-    if (!recipient.onesignal_player_id) {
+    if (!recipientProfile.onesignal_player_id) {
       return res.status(400).json({ error: 'Recipient has not enabled notifications' })
     }
 
@@ -44,7 +42,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     switch (type) {
       case 'team_invitation':
         success = await sendTeamInvitation(
-          recipient.onesignal_player_id,
+          recipientProfile.onesignal_player_id,
           data.inviterName,
           data.teamName,
           data.teamId
@@ -54,7 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       case 'meeting_reminder':
         success = await sendMeetingReminder(
-          recipient.onesignal_player_id,
+          recipientProfile.onesignal_player_id,
           data.meetingTitle,
           data.meetingTime,
           data.meetingId,
@@ -65,7 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       case 'connection_request':
         success = await sendConnectionRequest(
-          recipient.onesignal_player_id,
+          recipientProfile.onesignal_player_id,
           data.requesterName,
           data.requesterId
         )
@@ -74,7 +72,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       case 'connection_accepted':
         success = await sendNotificationToPlayer(
-          recipient.onesignal_player_id,
+          recipientProfile.onesignal_player_id,
           'Connection Accepted!',
           `${data.friendName} accepted your connection request!`,
           {
@@ -89,7 +87,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       case 'connection_declined':
         success = await sendNotificationToPlayer(
-          recipient.onesignal_player_id,
+          recipientProfile.onesignal_player_id,
           'Connection Declined',
           `${data.friendName} declined your connection request`,
           {
@@ -110,7 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ 
         success: true, 
         message,
-        recipient: recipient.first_name 
+        recipient: recipientProfile.first_name 
       })
     } else {
       return res.status(500).json({ error: 'Failed to send notification' })

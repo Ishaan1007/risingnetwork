@@ -32,20 +32,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .eq('id', requesterId)
       .single()
 
-    const { data: recipient, error: recipientError }: {
-      data: { onesignal_player_id?: string | null; first_name?: string | null } | null
-      error: any
-    } = await supabaseAdmin
+    const { data: recipient, error: recipientError } = await supabaseAdmin
       .from('profiles')
       .select('first_name, onesignal_player_id')
       .eq('id', recipientId)
       .single()
+    const recipientProfile = recipient as { onesignal_player_id?: string | null; first_name?: string | null } | null
 
-    if (requesterError || recipientError || !requester || !recipient) {
+    if (requesterError || recipientError || !requester || !recipientProfile) {
       return res.status(404).json({ error: 'User not found' })
     }
 
-    if (!recipient.onesignal_player_id) {
+    if (!recipientProfile.onesignal_player_id) {
       return res.status(400).json({ error: 'Recipient has not enabled notifications' })
     }
 
@@ -76,7 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           type: 'connection_accepted',
           recipientId: requesterId,
           data: {
-            friendName: recipient.first_name,
+            friendName: recipientProfile.first_name,
             friendId: recipientId
           }
         })
