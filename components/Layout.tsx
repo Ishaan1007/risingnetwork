@@ -31,11 +31,10 @@ export default function Layout({ children }: LayoutProps) {
       if (session?.user) {
         fetch('/api/profiles/ensure', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: session.user.id,
-            email: session.user.email,
-          }),
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
         }).catch((error) => console.warn('Failed to ensure profile:', error))
       }
     }
@@ -49,11 +48,10 @@ export default function Layout({ children }: LayoutProps) {
       if (sess?.user) {
         fetch('/api/profiles/ensure', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: sess.user.id,
-            email: sess.user.email,
-          }),
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${sess.access_token}`,
+          },
         }).catch((error) => console.warn('Failed to ensure profile:', error))
       }
     })

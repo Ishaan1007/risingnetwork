@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { supabase } from '../../../lib/supabaseClient'
-import { sendConnectionRequest } from '../../../lib/onesignal'
+import { getSupabaseAdmin, getSupabaseUserClient, getUserFromRequest } from '../../../lib/serverSupabase'
+import { sendConnectionRequest } from '../../../lib/onesignalServer'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -9,19 +9,33 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { requesterId, recipientId, message } = req.body
+    const user = await getUserFromRequest(req)
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
 
     if (!requesterId || !recipientId) {
       return res.status(400).json({ error: 'Missing required fields: requesterId, recipientId' })
     }
 
+    if (requesterId !== user.id) {
+      return res.status(403).json({ error: 'Requester does not match authenticated user' })
+    }
+    if (requesterId === recipientId) {
+      return res.status(400).json({ error: 'Cannot connect with yourself' })
+    }
+
+    const supabaseAdmin = getSupabaseAdmin()
+    const supabaseUser = getSupabaseUserClient(req.headers.authorization?.slice(7) || '')
+
     // Get both users' profiles
-    const { data: requester, error: requesterError } = await supabase
+    const { data: requester, error: requesterError } = await supabaseAdmin
       .from('profiles')
       .select('first_name, onesignal_player_id')
       .eq('id', requesterId)
       .single()
 
-    const { data: recipient, error: recipientError } = await supabase
+    const { data: recipient, error: recipientError } = await supabaseAdmin
       .from('profiles')
       .select('first_name, onesignal_player_id')
       .eq('id', recipientId)
@@ -36,12 +50,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Check if already connected
-    const { data: existingConnection } = await supabase
+    const { data: existingConnection } = await supabaseUser
       .from('connections')
       .select('*')
       .or(
-        (requesterId.eq(requesterId) && recipientId.eq(recipientId)),
-        (requesterId.eq(recipientId) && recipientId.eq(requesterId))
+        `and(requester_id.eq.${requesterId},recipient_id.eq.${recipientId}),and(requester_id.eq.${recipientId},recipient_id.eq.${requesterId})`
       )
       .single()
 
@@ -50,7 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Create connection request
-    const { data: connection, error: connectionError } = await supabase
+    const { data: connection, error: connectionError } = await supabaseUser
       .from('connections')
       .insert({
         requester_id: requesterId,

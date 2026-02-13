@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { supabaseServer } from '../../../lib/serverSupabase'
+import { getSupabaseUserClient, getUserFromRequest } from '../../../lib/serverSupabase'
 
 export default async function handler(
   req: NextApiRequest,
@@ -8,13 +8,14 @@ export default async function handler(
   if (req.method === 'GET') {
     // Get pending invitations for current user
     try {
-      const userId = req.headers['x-user-id'] as string
-
-      if (!userId) {
+      const user = await getUserFromRequest(req)
+      if (!user) {
         return res.status(401).json({ error: 'User ID required' })
       }
 
-      const { data, error } = await supabaseServer
+      const token = req.headers.authorization?.slice(7) || ''
+      const supabaseUser = getSupabaseUserClient(token)
+      const { data, error } = await supabaseUser
         .from('team_members')
         .select(`
           id,
@@ -31,7 +32,7 @@ export default async function handler(
             )
           )
         `)
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .eq('status', 'pending')
         .order('created_at', { ascending: false })
 
@@ -47,9 +48,8 @@ export default async function handler(
     // Accept or decline invitation
     try {
       const { invitation_id, action } = req.body
-      const userId = req.headers['x-user-id'] as string
-
-      if (!invitation_id || !action || !userId) {
+      const user = await getUserFromRequest(req)
+      if (!invitation_id || !action || !user) {
         return res.status(400).json({ 
           error: 'invitation_id, action, and user ID required' 
         })
@@ -60,14 +60,16 @@ export default async function handler(
       }
 
       // Update invitation status
-      const { data, error } = await supabaseServer
+      const token = req.headers.authorization?.slice(7) || ''
+      const supabaseUser = getSupabaseUserClient(token)
+      const { data, error } = await supabaseUser
         .from('team_members')
         .update({ 
           status: action === 'accept' ? 'accepted' : 'declined',
           updated_at: new Date().toISOString()
         })
         .eq('id', invitation_id)
-        .eq('user_id', userId)
+        .eq('user_id', user.id)
         .eq('status', 'pending')
         .select()
         .single()

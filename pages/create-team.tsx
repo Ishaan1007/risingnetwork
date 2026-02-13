@@ -12,6 +12,7 @@ export default function CreateTeam() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [collegeId, setCollegeId] = useState<number | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
 
   useEffect(() => {
     const init = async () => {
@@ -25,6 +26,7 @@ export default function CreateTeam() {
       }
 
       setUserId(session.user.id)
+      setAccessToken(session.access_token)
 
       // Get user's college
       const { data: collegeInfo } = await supabase
@@ -55,7 +57,7 @@ export default function CreateTeam() {
       return
     }
 
-    if (!collegeId || !userId) {
+    if (!collegeId || !userId || !accessToken) {
       setMessage({ type: 'error', text: 'Missing college or user info' })
       return
     }
@@ -67,11 +69,13 @@ export default function CreateTeam() {
       // Create team
       const response = await fetch('/api/teams', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({
           name,
           college_id: collegeId,
-          created_by: userId,
         }),
       })
 

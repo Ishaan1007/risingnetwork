@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { supabaseServer } from '../../../lib/serverSupabase'
+import { getSupabaseUserClient, getUserFromRequest } from '../../../lib/serverSupabase'
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,17 +10,23 @@ export default async function handler(
   }
 
   try {
-    const { userId, email } = req.body
+    const user = await getUserFromRequest(req)
 
-    if (!userId || !email) {
-      return res.status(400).json({ error: 'userId and email required' })
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+    if (!user.email) {
+      return res.status(400).json({ error: 'Email is required to create profile' })
     }
 
+    const token = req.headers.authorization?.slice(7) || ''
+    const supabaseUser = getSupabaseUserClient(token)
+
     // Check if profile already exists
-    const { data: existing } = await supabaseServer
+    const { data: existing } = await supabaseUser
       .from('profiles')
       .select('id')
-      .eq('id', userId)
+      .eq('id', user.id)
       .single()
 
     if (existing) {
@@ -28,11 +34,11 @@ export default async function handler(
     }
 
     // Create profile with defaults
-    const { data: newProfile, error } = await supabaseServer
+    const { data: newProfile, error } = await supabaseUser
       .from('profiles')
       .insert({
-        id: userId,
-        email: email,
+        id: user.id,
+        email: user.email,
         first_name: '',
         last_name: '',
         city: '',

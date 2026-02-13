@@ -43,7 +43,7 @@ export default function TeamInvitations() {
 
         const response = await fetch('/api/teams/invitations', {
           headers: {
-            'x-user-id': session.user.id,
+            Authorization: `Bearer ${session.access_token}`,
           },
         })
 
@@ -85,7 +85,7 @@ export default function TeamInvitations() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': session.user.id,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
           invitation_id: invitationId,

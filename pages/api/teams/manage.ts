@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { supabaseServer } from '../../../lib/serverSupabase'
+import { getSupabaseAdmin, getSupabaseUserClient, getUserFromRequest } from '../../../lib/serverSupabase'
 
 export default async function handler(
   req: NextApiRequest,
@@ -8,16 +8,25 @@ export default async function handler(
   if (req.method === 'DELETE') {
     // Delete team (creator only) or kick member or leave team
     try {
-      const { action, team_id, user_id, requester_id } = req.body
-      const requesterId = String(req.headers['x-user-id'] || requester_id || user_id || '')
+      const user = await getUserFromRequest(req)
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' })
+      }
+
+      const { action, team_id, user_id } = req.body
+      const requesterId = user.id
 
       if (!action || !team_id) {
         return res.status(400).json({ error: 'action and team_id required' })
       }
 
+      const token = req.headers.authorization?.slice(7) || ''
+      const supabaseUser = getSupabaseUserClient(token)
+      const supabaseAdmin = getSupabaseAdmin()
+
       if (action === 'delete-team') {
         // Only creator can delete team
-        const { data: team, error: teamError } = await supabaseServer
+        const { data: team, error: teamError } = await supabaseUser
           .from('teams')
           .select('created_by')
           .eq('id', team_id)
@@ -32,10 +41,10 @@ export default async function handler(
         }
 
         // Delete all team members
-        await supabaseServer.from('team_members').delete().eq('team_id', team_id)
+        await supabaseAdmin.from('team_members').delete().eq('team_id', team_id)
 
         // Delete team
-        const { error: deleteError } = await supabaseServer
+        const { error: deleteError } = await supabaseAdmin
           .from('teams')
           .delete()
           .eq('id', team_id)
@@ -51,7 +60,7 @@ export default async function handler(
           return res.status(400).json({ error: 'user_id required for kick' })
         }
 
-        const { data: team, error: teamError } = await supabaseServer
+        const { data: team, error: teamError } = await supabaseUser
           .from('teams')
           .select('created_by')
           .eq('id', team_id)
@@ -66,7 +75,7 @@ export default async function handler(
         }
 
         // Remove member
-        const { error: removeError } = await supabaseServer
+        const { error: removeError } = await supabaseAdmin
           .from('team_members')
           .delete()
           .eq('team_id', team_id)
@@ -79,8 +88,8 @@ export default async function handler(
         return res.status(200).json({ message: 'Member removed' })
       } else if (action === 'leave-team') {
         // Any member can leave
-        const targetUserId = user_id || requesterId
-        const { error: removeError } = await supabaseServer
+        const targetUserId = requesterId
+        const { error: removeError } = await supabaseUser
           .from('team_members')
           .delete()
           .eq('team_id', team_id)

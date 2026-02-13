@@ -11,8 +11,8 @@ type Meeting = {
   description?: string
   team_id: string
   creator_id: string
-  scheduled_time: string
-  duration: number
+  scheduled_for: string
+  duration_minutes: number
   meet_link?: string
   created_at: string
   teams: {
@@ -25,7 +25,7 @@ type MeetingParticipant = {
   id: string
   meeting_id: string
   user_id: string
-  status: 'accepted' | 'declined' | 'tentative'
+  status: 'invited' | 'accepted' | 'declined' | 'joined'
   profiles: {
     id: string
     first_name: string
@@ -44,7 +44,7 @@ export default function MeetingDetailPage() {
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'chat' | 'participants' | 'details'>('chat')
   const [isParticipant, setIsParticipant] = useState(false)
-  const [userStatus, setUserStatus] = useState<'accepted' | 'declined' | 'tentative'>()
+  const [userStatus, setUserStatus] = useState<'invited' | 'accepted' | 'declined' | 'joined'>()
 
   useEffect(() => {
     if (!meetingId) return
@@ -102,7 +102,7 @@ export default function MeetingDetailPage() {
           
           // Check if current user is a participant
           const userParticipant = participantsData?.find(p => p.user_id === session.user.id)
-          setIsParticipant(!!userParticipant)
+          setIsParticipant(userParticipant?.status === 'accepted' || userParticipant?.status === 'joined')
           setUserStatus(userParticipant?.status)
         }
 
@@ -141,7 +141,7 @@ export default function MeetingDetailPage() {
     }
   }
 
-  const handleStatusChange = async (status: 'accepted' | 'declined' | 'tentative') => {
+  const handleStatusChange = async (status: 'accepted' | 'declined' | 'joined') => {
     if (!currentUser || !meeting) return
 
     try {
@@ -187,15 +187,15 @@ export default function MeetingDetailPage() {
   const isMeetingActive = () => {
     if (!meeting) return false
     const now = new Date()
-    const meetingTime = new Date(meeting.scheduled_time)
-    const endTime = new Date(meetingTime.getTime() + meeting.duration * 60000)
+    const meetingTime = new Date(meeting.scheduled_for)
+    const endTime = new Date(meetingTime.getTime() + meeting.duration_minutes * 60000)
     return now >= meetingTime && now <= endTime
   }
 
   const isMeetingUpcoming = () => {
     if (!meeting) return false
     const now = new Date()
-    const meetingTime = new Date(meeting.scheduled_time)
+    const meetingTime = new Date(meeting.scheduled_for)
     return now < meetingTime
   }
 
@@ -228,8 +228,8 @@ export default function MeetingDetailPage() {
           <h1>{meeting.title}</h1>
           <p>{meeting.description || 'No description available'}</p>
           <div className="rn-card-meta">
-            <span>{formatDateTime(meeting.scheduled_time)}</span>
-            <span>{formatDuration(meeting.duration)}</span>
+            <span>{formatDateTime(meeting.scheduled_for)}</span>
+            <span>{formatDuration(meeting.duration_minutes)}</span>
             <span>Team: {meeting.teams.name}</span>
           </div>
         </div>
@@ -251,19 +251,13 @@ export default function MeetingDetailPage() {
                 className={`rn-status-btn ${userStatus === 'accepted' ? 'active' : ''}`}
                 onClick={() => handleStatusChange('accepted')}
               >
-                ✓ Going
-              </button>
-              <button
-                className={`rn-status-btn ${userStatus === 'tentative' ? 'active' : ''}`}
-                onClick={() => handleStatusChange('tentative')}
-              >
-                ? Maybe
+                Going
               </button>
               <button
                 className={`rn-status-btn ${userStatus === 'declined' ? 'active' : ''}`}
                 onClick={() => handleStatusChange('declined')}
               >
-                ✗ Not Going
+                Not Going
               </button>
             </div>
           ) : (
@@ -367,11 +361,11 @@ export default function MeetingDetailPage() {
                 )}
                 <div className="rn-detail-item">
                   <label>Date & Time:</label>
-                  <span>{formatDateTime(meeting.scheduled_time)}</span>
+                  <span>{formatDateTime(meeting.scheduled_for)}</span>
                 </div>
                 <div className="rn-detail-item">
                   <label>Duration:</label>
-                  <span>{formatDuration(meeting.duration)}</span>
+                    <span>{formatDuration(meeting.duration_minutes)}</span>
                 </div>
                 <div className="rn-detail-item">
                   <label>Team:</label>
@@ -428,7 +422,7 @@ export default function MeetingDetailPage() {
                 <span className="rn-stat-label">Participants</span>
               </div>
               <div className="rn-stat">
-                <span className="rn-stat-number">{meeting.duration}</span>
+                <span className="rn-stat-number">{meeting.duration_minutes}</span>
                 <span className="rn-stat-label">Minutes</span>
               </div>
               <div className="rn-stat">

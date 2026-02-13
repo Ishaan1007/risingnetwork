@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { supabase } from '../../lib/supabaseClient'
+import { getSupabaseUserClient, getUserFromRequest } from '../../lib/serverSupabase'
 import { syncProfilePicture } from '../../lib/gravatar'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -8,25 +8,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Get user from session
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (!session?.user) {
+    const user = await getUserFromRequest(req)
+    if (!user) {
       return res.status(401).json({ error: 'Unauthorized' })
     }
 
     // Sync profile picture
-    const profilePicture = syncProfilePicture(session.user)
+    const profilePicture = syncProfilePicture(user)
     
     if (profilePicture) {
+      const token = req.headers.authorization?.slice(7) || ''
+      const supabaseUser = getSupabaseUserClient(token)
       // Update user profile with synced picture
-      const { data, error } = await supabase
+      const { data, error } = await supabaseUser
         .from('profiles')
         .update({ 
           avatar_url: profilePicture,
           updated_at: new Date().toISOString()
         })
-        .eq('id', session.user.id)
+        .eq('id', user.id)
         .select()
         .single()
 

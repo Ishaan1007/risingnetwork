@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { supabaseServer } from '../../../lib/serverSupabase'
+import { getSupabaseAdmin, getSupabaseUserClient, getUserFromRequest } from '../../../lib/serverSupabase'
+import { sendTeamInvitation } from '../../../lib/onesignalServer'
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,14 +11,37 @@ export default async function handler(
   }
 
   try {
+    const user = await getUserFromRequest(req)
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
+
     const { team_id, user_id } = req.body
 
     if (!team_id || !user_id) {
       return res.status(400).json({ error: 'team_id and user_id required' })
     }
 
+    const token = req.headers.authorization?.slice(7) || ''
+    const supabaseUser = getSupabaseUserClient(token)
+    const supabaseAdmin = getSupabaseAdmin()
+
+    const { data: team, error: teamError } = await supabaseUser
+      .from('teams')
+      .select('id, name, created_by')
+      .eq('id', team_id)
+      .single()
+
+    if (teamError || !team) {
+      return res.status(404).json({ error: 'Team not found' })
+    }
+
+    if (team.created_by !== user.id) {
+      return res.status(403).json({ error: 'Only team creator can invite' })
+    }
+
     // Check if already invited/member
-    const { data: existing } = await supabaseServer
+    const { data: existing } = await supabaseUser
       .from('team_members')
       .select('id, status')
       .eq('team_id', team_id)
@@ -31,7 +55,7 @@ export default async function handler(
     }
 
     // Create invitation
-    const { data: invitation, error } = await supabaseServer
+    const { data: invitation, error } = await supabaseUser
       .from('team_members')
       .insert({
         team_id,
@@ -47,26 +71,22 @@ export default async function handler(
 
     // Send notification to invitee
     try {
-      const notificationResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/notifications/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'team_invitation',
-          recipientId: user_id,
-          data: {
-            teamId: team_id
-          }
-        })
-      })
+      const { data: recipient } = await supabaseAdmin
+        .from('profiles')
+        .select('onesignal_player_id, first_name')
+        .eq('id', user_id)
+        .single()
 
-      if (notificationResponse.ok) {
-        console.log('Team invitation notification sent successfully')
+      if (recipient?.onesignal_player_id) {
+        await sendTeamInvitation(
+          recipient.onesignal_player_id,
+          user.user_metadata?.first_name || 'Someone',
+          team.name,
+          String(team_id)
+        )
       }
     } catch (notificationError) {
       console.error('Failed to send notification:', notificationError)
-      // Don't fail the request if notification fails
     }
 
     return res.status(201).json({ invitation })

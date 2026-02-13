@@ -1,8 +1,19 @@
 import { NextApiRequest, NextApiResponse } from 'next'
 import { createClient } from '@supabase/supabase-js'
+import { getUserFromRequest } from '../../../lib/serverSupabase'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
+
+  const user = await getUserFromRequest(req)
+  if (!user) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
+
+  const adminEmails = new Set(['ishaanjain4u@gmail.com', 'iashjain1@gmail.com'])
+  if (!user.email || !adminEmails.has(user.email)) {
+    return res.status(403).json({ error: 'Forbidden' })
+  }
 
   const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
   const SERVICE_ROLE = process.env.SUPABASE_SERVICE_ROLE_KEY || ''

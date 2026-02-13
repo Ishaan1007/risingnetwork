@@ -48,13 +48,9 @@ export default async function handler(
         return res.status(400).json({ error: 'Failed to exchange authorization code' })
       }
 
-      const { access_token, refresh_token } = tokenData
-
       // Store tokens securely (in production, store in database)
-      // For now, return tokens to client
+      // Avoid returning tokens to the client from this endpoint.
       res.status(200).json({
-        access_token,
-        refresh_token,
         message: 'Authentication successful'
       })
     } catch (error) {

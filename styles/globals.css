@@ -1684,7 +1684,8 @@ pre {
   color: #dc2626;
 }
 
-.rn-badge.tentative {
+.rn-badge.invited,
+.rn-badge.joined {
   background: #fef3c7;
   color: #d97706;
 }

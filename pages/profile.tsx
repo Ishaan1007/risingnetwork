@@ -5,7 +5,7 @@ import imageCompression from 'browser-image-compression'
 import { LoaderIcon } from '../components/Icons'
 import Avatar from '../components/Avatar'
 import { syncProfilePicture } from '../lib/gravatar'
-import { subscribeToNotifications, getOneSignalPlayerId } from '../lib/onesignal'
+import { subscribeToNotifications } from '../lib/onesignalClient'
 
 type Profile = {
   id: string
@@ -18,6 +18,8 @@ type Profile = {
   github_url?: string | null
   portfolio_url?: string | null
   avatar_url?: string | null
+  onesignal_player_id?: string | null
+  notifications_enabled?: boolean | null
 }
 
 type Skill = {
@@ -59,9 +61,11 @@ export default function Profile() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
+  const [notificationsLoading, setNotificationsLoading] = useState(false)
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [userId, setUserId] = useState<string | null>(null)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   // Fetch session and profile data
@@ -155,6 +159,7 @@ export default function Profile() {
       }
 
       setUserId(session.user.id)
+      setAccessToken(session.access_token)
       init(session.user.id)
     })
 
@@ -223,6 +228,44 @@ export default function Profile() {
     }
   }
 
+  const handleEnableNotifications = async () => {
+    if (!userId) return
+    setNotificationsLoading(true)
+    setMessage(null)
+    try {
+      const playerId = await subscribeToNotifications()
+      if (!playerId) {
+        setMessage({ type: 'error', text: 'Notification permission was not granted.' })
+        return
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          onesignal_player_id: playerId,
+          notifications_enabled: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId)
+
+      if (error) throw error
+
+      setProfile((prev) =>
+        prev ? { ...prev, onesignal_player_id: playerId, notifications_enabled: true } : prev
+      )
+      setMessage({ type: 'success', text: 'Notifications enabled.' })
+      setTimeout(() => setMessage(null), 3000)
+    } catch (error: any) {
+      console.error('enable notifications error', error)
+      setMessage({
+        type: 'error',
+        text: error.message || 'Failed to enable notifications.',
+      })
+    } finally {
+      setNotificationsLoading(false)
+    }
+  }
+
   const filteredColleges = allColleges.filter((c) => {
     const query = universityQuery.trim().toLowerCase()
     if (!query) return true
@@ -274,29 +317,38 @@ export default function Profile() {
         throw profileUpdateError
       }
 
-      // Delete old user_skills
-      const { error: deleteError } = await supabase
-        .from('user_skills')
-        .delete()
-        .eq('user_id', userId)
-
-      if (deleteError) {
-        throw deleteError
-      }
-
-      // Insert new user_skills (upsert to avoid duplicate key errors)
       if (selectedSkillIds.length > 0) {
         const skillRecords = selectedSkillIds.map((skillId) => ({
           user_id: userId,
           skill_id: skillId,
         }))
 
-        const { error: insertError } = await supabase
+        const { error: upsertError } = await supabase
           .from('user_skills')
           .upsert(skillRecords, { onConflict: 'user_id,skill_id' })
 
-        if (insertError) {
-          throw insertError
+        if (upsertError) {
+          throw upsertError
+        }
+
+        const notIn = `(${selectedSkillIds.join(',')})`
+        const { error: pruneError } = await supabase
+          .from('user_skills')
+          .delete()
+          .eq('user_id', userId)
+          .not('skill_id', 'in', notIn)
+
+        if (pruneError) {
+          throw pruneError
+        }
+      } else {
+        const { error: deleteAllError } = await supabase
+          .from('user_skills')
+          .delete()
+          .eq('user_id', userId)
+
+        if (deleteAllError) {
+          throw deleteAllError
         }
       }
 
@@ -332,7 +384,7 @@ export default function Profile() {
   }
 
   const handleUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0 || !userId) return
+    if (!files || files.length === 0 || !userId || !accessToken) return
     const file = files[0]
     const maxBytes = 2 * 1024 * 1024
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
@@ -373,7 +425,10 @@ export default function Profile() {
         const publicId = `${userId}-${Date.now()}`
         const signRes = await fetch('/api/cloudinary/sign', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`,
+          },
           body: JSON.stringify({ public_id: publicId }),
         })
         const signData = await signRes.json()
@@ -547,6 +602,20 @@ export default function Profile() {
                 ) : (
                   'Sync from Google'
                 )}
+              </button>
+            </div>
+            <div style={{ marginTop: 10 }}>
+              <button
+                type="button"
+                className="rn-secondary-btn"
+                onClick={handleEnableNotifications}
+                disabled={notificationsLoading || profile.notifications_enabled}
+              >
+                {notificationsLoading
+                  ? 'Enabling...'
+                  : profile.notifications_enabled
+                  ? 'Notifications Enabled'
+                  : 'Enable Notifications'}
               </button>
             </div>
           </div>

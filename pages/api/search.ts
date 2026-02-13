@@ -16,14 +16,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Search profiles by name, city, or skill name
     // We'll query profiles and join user_skills -> skills to enable searching by skill
-    const { data, error, count } = await supabaseServer
+    const { data, error } = await supabaseServer
       .from('profiles')
       .select(
         `
         id,
         first_name,
         last_name,
-        email,
         city,
         role,
         bio,
@@ -38,7 +37,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .or(
         `first_name.ilike.%${term}%,last_name.ilike.%${term}%,city.ilike.%${term}%`
       )
-      .range(offsetNum, offsetNum + limitNum - 1)
 
     if (error) {
       console.error('search profiles error', error)
@@ -57,11 +55,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return false
     })
 
-    const transformed = filtered.map((p: any) => ({
+    const paged = filtered.slice(offsetNum, offsetNum + limitNum)
+    const transformed = paged.map((p: any) => ({
       id: p.id,
       first_name: p.first_name,
       last_name: p.last_name,
-      email: p.email,
       city: p.city,
       role: p.role,
       bio: p.bio,
@@ -72,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       skills: (p.user_skills || []).map((us: any) => us.skills).filter(Boolean),
     }))
 
-    return res.status(200).json({ data: transformed, total: count || transformed.length, limit: limitNum, offset: offsetNum })
+    return res.status(200).json({ data: transformed, total: filtered.length, limit: limitNum, offset: offsetNum })
   } catch (err: any) {
     console.error('search handler error', err)
     return res.status(500).json({ error: err.message || 'Internal error' })

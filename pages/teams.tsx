@@ -30,6 +30,7 @@ export default function Teams() {
   const [activeTab, setActiveTab] = useState<'friends' | 'teams'>('friends')
   const [error, setError] = useState<string | null>(null)
   const [showMeetModal, setShowMeetModal] = useState(false)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
 
   useEffect(() => {
     let isMounted = true
@@ -50,6 +51,7 @@ export default function Teams() {
           router.push('/')
           return
         }
+        if (isMounted) setAccessToken(session.access_token)
 
         const { data: collegeInfo, error: collegeError } = await supabase
           .from('college_info')
@@ -108,6 +110,9 @@ export default function Teams() {
 
         const response = await fetch(`/api/teams?college_id=${collegeInfo.college_id}`, {
           signal: controller.signal,
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
         })
 
         if (!response.ok) {
@@ -148,7 +153,7 @@ export default function Teams() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-user-id': session.user.id,
+          Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify(meetingData),
       })
@@ -160,7 +165,7 @@ export default function Teams() {
 
       const result = await response.json()
       console.log('Meeting scheduled:', result)
-      alert(`Google Meet scheduled successfully! Meet link: ${result.meet_link}`)
+      alert(`Google Meet scheduled successfully! Meet link: ${result.meeting?.meet_link || 'Unavailable'}`)
     } catch (error: any) {
       console.error('Error scheduling meeting:', error)
       alert(error.message || 'Failed to schedule meeting')

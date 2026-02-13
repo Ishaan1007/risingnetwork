@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { supabaseServer } from '../../lib/serverSupabase'
+import { getSupabaseUserClient, getUserFromRequest } from '../../lib/serverSupabase'
 
 export default async function handler(
   req: NextApiRequest,
@@ -8,13 +8,14 @@ export default async function handler(
   if (req.method === 'GET') {
     // Get invitations for a user
     try {
-      const { user_id } = req.query
-
-      if (!user_id) {
-        return res.status(400).json({ error: 'user_id required' })
+      const user = await getUserFromRequest(req)
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' })
       }
 
-      const { data, error } = await supabaseServer
+      const token = req.headers.authorization?.slice(7) || ''
+      const supabaseUser = getSupabaseUserClient(token)
+      const { data, error } = await supabaseUser
         .from('team_members')
         .select(
           `
@@ -33,7 +34,7 @@ export default async function handler(
           )
         `
         )
-        .eq('user_id', user_id)
+        .eq('user_id', user.id)
         .eq('status', 'pending')
 
       if (error) {
@@ -55,15 +56,23 @@ export default async function handler(
           .json({ error: 'team_member_id and action (accept/decline) required' })
       }
 
+      const user = await getUserFromRequest(req)
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' })
+      }
+
       const status = action === 'accept' ? 'accepted' : 'declined'
 
-      const { data, error } = await supabaseServer
+      const token = req.headers.authorization?.slice(7) || ''
+      const supabaseUser = getSupabaseUserClient(token)
+      const { data, error } = await supabaseUser
         .from('team_members')
         .update({
           status,
           accepted_at: action === 'accept' ? new Date().toISOString() : null,
         })
         .eq('id', team_member_id)
+        .eq('user_id', user.id)
         .select()
         .single()
 

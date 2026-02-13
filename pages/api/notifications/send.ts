@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { supabase } from '../../../lib/supabaseClient'
-import { sendTeamInvitation, sendMeetingReminder, sendConnectionRequest, sendNotificationToPlayer } from '../../../lib/onesignal'
+import { getSupabaseAdmin, getUserFromRequest } from '../../../lib/serverSupabase'
+import { sendTeamInvitation, sendMeetingReminder, sendConnectionRequest, sendNotificationToPlayer } from '../../../lib/onesignalServer'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== 'POST') {
@@ -9,13 +9,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const { type, recipientId, data } = req.body
+    const user = await getUserFromRequest(req)
+    if (!user) {
+      return res.status(401).json({ error: 'Unauthorized' })
+    }
 
     if (!type || !recipientId) {
       return res.status(400).json({ error: 'Missing required fields: type, recipientId' })
     }
 
     // Get recipient's OneSignal player ID
-    const { data: recipient, error: recipientError } = await supabase
+    const supabaseAdmin = getSupabaseAdmin()
+    const { data: recipient, error: recipientError } = await supabaseAdmin
       .from('profiles')
       .select('onesignal_player_id, first_name')
       .eq('id', recipientId)

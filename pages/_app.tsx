@@ -2,7 +2,7 @@ import '../styles/globals.css'
 import '../styles/chat.css'
 import type { AppProps } from 'next/app'
 import { useEffect } from 'react'
-import { initializeOneSignal } from '../lib/onesignal'
+import { initializeOneSignal } from '../lib/onesignalClient'
 import Layout from '../components/Layout'
 import Head from 'next/head'
 

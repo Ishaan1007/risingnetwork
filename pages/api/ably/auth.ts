@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { supabase } from '../../../lib/supabaseClient'
+import { getUserFromRequest } from '../../../lib/serverSupabase'
 import * as Ably from 'ably'
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -8,17 +8,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    // Get user session
-    const { data: { session } } = await supabase.auth.getSession()
-    
-    if (!session?.user) {
+    const user = await getUserFromRequest(req)
+    if (!user) {
       return res.status(401).json({ error: 'Unauthorized' })
     }
 
     const { clientId, capability } = req.body
 
     // Validate clientId matches the authenticated user
-    if (clientId !== session.user.id) {
+    if (clientId !== user.id) {
       return res.status(403).json({ error: 'Invalid client ID' })
     }
 
@@ -33,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     // Generate token request
     const tokenRequest = {
-      clientId: session.user.id,
+      clientId: user.id,
       capability: capability || {
         // Default capabilities for authenticated users
         'team:*': ['subscribe', 'publish', 'presence'],
@@ -44,9 +42,9 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       },
       ttl: 3600000, // 1 hour
       data: {
-        userId: session.user.id,
-        userName: session.user.user_metadata?.first_name || 'User',
-        userEmail: session.user.email
+        userId: user.id,
+        userName: user.user_metadata?.first_name || 'User',
+        userEmail: user.email
       }
     }
 
@@ -54,8 +52,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const tokenDetails = await ablyRest.auth.createTokenRequest(tokenRequest)
 
     return res.status(200).json({
-      tokenRequest: tokenDetails,
-      apiKey: process.env.ABLY_API_KEY
+      tokenRequest: tokenDetails
     })
 
   } catch (error) {

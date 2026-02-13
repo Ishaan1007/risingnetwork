@@ -20,6 +20,7 @@ import {
   createSystemMessage
 } from '../lib/ably'
 import type { ChatMessageEvent } from '@ably/chat'
+import { supabase } from '../lib/supabaseClient'
 
 interface ChatProps {
   channelId: string
@@ -56,10 +57,22 @@ export default function Chat({
         setIsLoading(true)
 
         // Initialize Ably with Chat SDK
-        const { realtime, chat } = await initializeAbly(
-          process.env.ABLY_API_KEY || '',
-          currentUserId
-        )
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+
+        if (!session?.access_token) {
+          throw new Error('Missing authentication token for chat')
+        }
+
+        const { realtime, chat } = await initializeAbly({
+          authUrl: '/api/ably/auth',
+          authHeaders: {
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          authMethod: 'POST',
+          clientId: currentUserId,
+        })
 
         // Connection handlers
         chat.connection.onStatusChange((change) => {

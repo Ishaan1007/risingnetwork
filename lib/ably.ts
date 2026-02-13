@@ -3,7 +3,10 @@ import { ChatClient } from '@ably/chat'
 import type { ChatMessageEvent } from '@ably/chat'
 
 export interface AblyConfig {
-  apiKey: string
+  apiKey?: string
+  authUrl?: string
+  authHeaders?: Record<string, string>
+  authMethod?: 'GET' | 'POST'
   clientId?: string
   autoConnect?: boolean
   disconnectedRetryTimeout?: number
@@ -71,7 +74,10 @@ let chatRooms: Map<string, any> = new Map()
 
 export function createAblyClient(config: AblyConfig): Ably.Realtime {
   const client = new Ably.Realtime({
-    key: config.apiKey,
+    ...(config.apiKey ? { key: config.apiKey } : {}),
+    ...(config.authUrl ? { authUrl: config.authUrl } : {}),
+    ...(config.authHeaders ? { authHeaders: config.authHeaders } : {}),
+    ...(config.authMethod ? { authMethod: config.authMethod } : {}),
     clientId: config.clientId,
     autoConnect: config.autoConnect ?? true,
     disconnectedRetryTimeout: config.disconnectedRetryTimeout ?? 15000,
@@ -107,15 +113,12 @@ export function getChatClient(): ChatClient | null {
   return chatClient
 }
 
-export async function initializeAbly(apiKey: string, clientId?: string): Promise<{ realtime: Ably.Realtime, chat: ChatClient }> {
+export async function initializeAbly(config: AblyConfig): Promise<{ realtime: Ably.Realtime, chat: ChatClient }> {
   if (realtimeClient && chatClient) {
     return { realtime: realtimeClient, chat: chatClient }
   }
 
-  realtimeClient = createAblyClient({
-    apiKey,
-    clientId,
-  })
+  realtimeClient = createAblyClient(config)
 
   chatClient = new ChatClient(realtimeClient)
 

@@ -29,11 +29,11 @@ self.addEventListener('notificationclick', (event) => {
     )
   } else if (data.action === 'accept_connection') {
     event.waitUntil(
-      clients.openWindow(`/api/connections/accept?requesterId=${data.userId}`)
+      clients.openWindow('/connections')
     )
   } else if (data.action === 'decline_connection') {
     event.waitUntil(
-      clients.openWindow(`/api/connections/decline?requesterId=${data.userId}`)
+      clients.openWindow('/connections')
     )
   } else {
     // Default to home page

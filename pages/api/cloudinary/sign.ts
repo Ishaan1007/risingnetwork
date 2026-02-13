@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import crypto from 'crypto'
+import { getUserFromRequest } from '../../../lib/serverSupabase'
 
 type SignResponse = {
   signature: string
@@ -10,7 +11,7 @@ type SignResponse = {
   publicId: string
 }
 
-export default function handler(req: NextApiRequest, res: NextApiResponse<SignResponse | { error: string }>) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse<SignResponse | { error: string }>) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' })
   }
@@ -23,15 +24,22 @@ export default function handler(req: NextApiRequest, res: NextApiResponse<SignRe
     return res.status(500).json({ error: 'Cloudinary env vars are missing' })
   }
 
-  const { public_id } = req.body as { public_id?: string }
-  if (!public_id) {
-    return res.status(400).json({ error: 'public_id required' })
+  const user = await getUserFromRequest(req)
+  if (!user) {
+    return res.status(401).json({ error: 'Unauthorized' })
   }
+
+  const { public_id } = req.body as { public_id?: string }
+
+  const safePublicId =
+    public_id && public_id.startsWith(`${user.id}-`)
+      ? public_id
+      : `${user.id}-${Date.now()}`
 
   const timestamp = Math.floor(Date.now() / 1000)
   const folder = 'avatars'
 
-  const toSign = `folder=${folder}&public_id=${public_id}&timestamp=${timestamp}${apiSecret}`
+  const toSign = `folder=${folder}&public_id=${safePublicId}&timestamp=${timestamp}${apiSecret}`
   const signature = crypto.createHash('sha1').update(toSign).digest('hex')
 
   return res.status(200).json({
@@ -40,6 +48,6 @@ export default function handler(req: NextApiRequest, res: NextApiResponse<SignRe
     apiKey,
     cloudName,
     folder,
-    publicId: public_id,
+    publicId: safePublicId,
   })
 }

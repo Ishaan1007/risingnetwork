@@ -1,87 +1,10 @@
-import OneSignal from 'react-onesignal'
-
-export interface OneSignalInitOptions {
-  appId: string
-  notifyButton?: {
-    enable: boolean
+function getOneSignalConfig() {
+  const appId = process.env.ONESIGNAL_APP_ID || process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID
+  const apiKey = process.env.ONESIGNAL_REST_API_KEY
+  if (!appId || !apiKey) {
+    throw new Error('Missing OneSignal app id or REST API key')
   }
-  promptOptions?: {
-    actionMessage: string
-    acceptButtonText: string
-    cancelButtonText: string
-  }
-}
-
-export async function initializeOneSignal(appId: string, safariWebId?: string) {
-  try {
-    const initOptions: any = {
-      appId,
-      notifyButton: {
-        enable: true,
-      },
-      promptOptions: {
-        actionMessage: "RisingNetwork wants to show notifications for team invitations, meeting reminders, and connection requests.",
-        acceptButtonText: "Allow",
-        cancelButtonText: "Don't Allow"
-      },
-      allowLocalhostAsSecureOrigin: true, // For development
-    }
-
-    // Only add safari_web_id if provided
-    if (safariWebId) {
-      initOptions.safari_web_id = safariWebId
-    }
-
-    await OneSignal.init(initOptions)
-
-    console.log('OneSignal initialized successfully')
-    return true
-  } catch (error) {
-    console.error('Error initializing OneSignal:', error)
-    return false
-  }
-}
-
-export async function requestNotificationPermission() {
-  try {
-    const permission = await OneSignal.Notifications.requestPermission()
-    return permission
-  } catch (error) {
-    console.error('Error requesting notification permission:', error)
-    return false
-  }
-}
-
-export async function getOneSignalPlayerId(): Promise<string | null> {
-  try {
-    // Use the correct OneSignal React SDK method
-    return null // Placeholder - will fix after checking docs
-  } catch (error) {
-    console.error('Error getting OneSignal player ID:', error)
-    return null
-  }
-}
-
-export async function subscribeToNotifications() {
-  try {
-    // Request permission first
-    const hasPermission = await requestNotificationPermission()
-    if (!hasPermission) {
-      return false
-    }
-
-    // Get player ID
-    const playerId = await getOneSignalPlayerId()
-    if (!playerId) {
-      return false
-    }
-
-    console.log('Successfully subscribed to notifications:', playerId)
-    return playerId
-  } catch (error) {
-    console.error('Error subscribing to notifications:', error)
-    return false
-  }
+  return { appId, apiKey }
 }
 
 export async function sendNotificationToPlayer(
@@ -91,24 +14,24 @@ export async function sendNotificationToPlayer(
   data?: Record<string, any>
 ) {
   try {
-    // Use REST API for sending notifications
+    const { appId, apiKey } = getOneSignalConfig()
     const response = await fetch('https://onesignal.com/api/v1/notifications', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Basic ${btoa(process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID + ':')}`
+        Authorization: `Basic ${apiKey}`,
       },
       body: JSON.stringify({
-        app_id: process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID,
+        app_id: appId,
         contents: { en: message },
         headings: { en: title },
         include_player_ids: [playerId],
         data: data || {},
         url: data?.url,
-        buttons: data?.buttons || []
-      })
+        buttons: data?.buttons || [],
+      }),
     })
-    
+
     return response.ok
   } catch (error) {
     console.error('Error sending notification:', error)
@@ -116,13 +39,14 @@ export async function sendNotificationToPlayer(
   }
 }
 
-// Notification types for RisingNetwork
-export type NotificationType = 
+export type NotificationType =
   | 'team_invitation'
   | 'meeting_reminder'
   | 'connection_request'
   | 'team_update'
   | 'meeting_update'
+  | 'connection_accepted'
+  | 'connection_declined'
 
 export interface NotificationData {
   type: NotificationType
@@ -147,7 +71,7 @@ export async function sendTeamInvitation(
       type: 'team_invitation',
       teamId,
       url: `/teams/${teamId}`,
-      action: 'view_team'
+      action: 'view_team',
     }
   )
 }
@@ -168,7 +92,7 @@ export async function sendMeetingReminder(
       meetingId,
       meetLink,
       url: `/meetings/${meetingId}`,
-      action: 'join_meeting'
+      action: 'join_meeting',
     }
   )
 }
@@ -190,13 +114,13 @@ export async function sendConnectionRequest(
       buttons: [
         {
           text: 'Accept',
-          action: 'accept_connection'
+          action: 'accept_connection',
         },
         {
           text: 'Decline',
-          action: 'decline_connection'
-        }
-      ]
+          action: 'decline_connection',
+        },
+      ],
     }
   )
 }
@@ -214,7 +138,7 @@ export async function sendFriendRequestAccepted(
       type: 'connection_accepted',
       userId: friendId,
       url: `/profile/${friendId}`,
-      action: 'view_profile'
+      action: 'view_profile',
     }
   )
 }
@@ -232,7 +156,7 @@ export async function sendFriendRequestDeclined(
       type: 'connection_declined',
       userId: friendId,
       url: '/connections',
-      action: 'view_connections'
+      action: 'view_connections',
     }
   )
 }

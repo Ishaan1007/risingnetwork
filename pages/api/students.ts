@@ -26,7 +26,6 @@ export default async function handler(
         id,
         first_name,
         last_name,
-        email,
         role,
         bio,
         linkedin_url,
@@ -63,10 +62,7 @@ export default async function handler(
       query = query.eq('college_info.college_id', parseInt(college as string))
     }
 
-    // Apply limit and offset
-    query = query.range(offsetNum, offsetNum + limitNum - 1)
-
-    const { data, error, count } = await query
+    const { data, error } = await query
 
     if (error) {
       console.error('Student fetch error:', error)
@@ -85,15 +81,16 @@ export default async function handler(
         return skillIds.some((id) => profileSkillIds.includes(id))
       })
     }
+    const totalFiltered = filtered.length
+    const paged = filtered.slice(offsetNum, offsetNum + limitNum)
 
     // Transform response to flatten skills and college info
-    const transformed = filtered.map((profile: any) => {
+    const transformed = paged.map((profile: any) => {
       const collegeInfo = profile.college_info?.[0]
       return {
         id: profile.id,
         first_name: profile.first_name,
         last_name: profile.last_name,
-        email: profile.email,
         bio: profile.bio,
         linkedin_url: profile.linkedin_url,
         github_url: profile.github_url,
@@ -115,7 +112,7 @@ export default async function handler(
     return res.status(200).json({
       data: transformed,
       count: transformed.length,
-      total: count || 0,
+      total: totalFiltered,
       limit: limitNum,
       offset: offsetNum,
     })

@@ -25,13 +25,18 @@ export default function MyInvitations() {
   const [userId, setUserId] = useState<string | null>(null)
   const [responding, setResponding] = useState<number | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
+  const [accessToken, setAccessToken] = useState<string | null>(null)
 
   useEffect(() => {
     let active = true
     let socketCleanup: (() => void) | null = null
-    const fetchInvitations = async (id: string) => {
+    const fetchInvitations = async (token: string) => {
       try {
-        const response = await fetch(`/api/invitations?user_id=${id}`)
+        const response = await fetch(`/api/invitations`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
         const result = await response.json()
 
         if (!active) return
@@ -60,13 +65,14 @@ export default function MyInvitations() {
       }
 
       setUserId(session.user.id)
+      setAccessToken(session.access_token)
 
       // Fetch invitations
-      await fetchInvitations(session.user.id)
+      await fetchInvitations(session.access_token)
 
       const socket = await getSocket()
       socket.emit('user:join', { userId: session.user.id })
-      const handleInvite = () => fetchInvitations(session.user.id)
+      const handleInvite = () => fetchInvitations(session.access_token)
       socket.on('invite:received', handleInvite)
       socketCleanup = () => {
         socket.off('invite:received', handleInvite)
@@ -85,9 +91,15 @@ export default function MyInvitations() {
     setMessage(null)
 
     try {
+      if (!accessToken) {
+        throw new Error('Not authenticated')
+      }
       const response = await fetch('/api/invitations', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
         body: JSON.stringify({
           team_member_id: invitationId,
           action,

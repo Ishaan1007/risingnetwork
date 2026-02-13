@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { supabaseServer } from '../../../lib/serverSupabase'
+import { getSupabaseUserClient, getUserFromRequest } from '../../../lib/serverSupabase'
 import { createGoogleMeetSpace, createGoogleMeeting, getGoogleMeetSpaces } from '../../../lib/googleMeet'
 
 export default async function handler(
@@ -9,9 +9,8 @@ export default async function handler(
   if (req.method === 'POST') {
     try {
       const { title, description, participant_ids, scheduled_for, duration_minutes } = req.body
-      const userId = req.headers['x-user-id'] as string
-
-      if (!userId) {
+      const user = await getUserFromRequest(req)
+      if (!user) {
         return res.status(401).json({ error: 'User ID required' })
       }
 
@@ -25,7 +24,7 @@ export default async function handler(
       const accessToken = process.env.GOOGLE_ACCESS_TOKEN || 'mock_token_for_development'
 
       // Create or get Google Meet space
-      let spaceName = `RisingNetwork-${userId}`
+      let spaceName = `RisingNetwork-${user.id}`
       let space
       
       try {
@@ -70,12 +69,14 @@ export default async function handler(
       }
 
       // Create meeting record
-      const { data: meeting, error: meetingError } = await supabaseServer
+      const token = req.headers.authorization?.slice(7) || ''
+      const supabaseUser = getSupabaseUserClient(token)
+      const { data: meeting, error: meetingError } = await supabaseUser
         .from('meetings')
         .insert({
           title,
           description: description || '',
-          created_by: userId,
+          created_by: user.id,
           scheduled_for: scheduled_for || new Date().toISOString(),
           duration_minutes: duration_minutes || 30,
           meet_link: meetLink,
@@ -99,11 +100,11 @@ export default async function handler(
       // Include creator as participant
       participants.push({
         meeting_id: meeting.id,
-        user_id: userId,
+        user_id: user.id,
         status: 'accepted'
       })
 
-      const { error: participantsError } = await supabaseServer
+      const { error: participantsError } = await supabaseUser
         .from('meeting_participants')
         .insert(participants)
 
@@ -124,13 +125,14 @@ export default async function handler(
     }
   } else if (req.method === 'GET') {
     try {
-      const userId = req.headers['x-user-id'] as string
-
-      if (!userId) {
+      const user = await getUserFromRequest(req)
+      if (!user) {
         return res.status(401).json({ error: 'User ID required' })
       }
 
-      const { data: meetings, error } = await supabaseServer
+      const token = req.headers.authorization?.slice(7) || ''
+      const supabaseUser = getSupabaseUserClient(token)
+      const { data: meetings, error } = await supabaseUser
         .from('meetings')
         .select(`
           *,
@@ -143,7 +145,7 @@ export default async function handler(
             )
           )
         `)
-        .or(`created_by.eq.${userId},meeting_participants.user_id.eq.${userId}`)
+        .or(`created_by.eq.${user.id},meeting_participants.user_id.eq.${user.id}`)
         .eq('meeting_participants.status', 'accepted')
         .order('scheduled_for', { ascending: true })
 

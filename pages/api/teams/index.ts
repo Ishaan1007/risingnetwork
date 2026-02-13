@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { supabaseServer } from '../../../lib/serverSupabase'
+import { getSupabaseUserClient, getUserFromRequest } from '../../../lib/serverSupabase'
 
 export default async function handler(
   req: NextApiRequest,
@@ -8,13 +8,19 @@ export default async function handler(
   if (req.method === 'GET') {
     // Get teams by college
     try {
+      const user = await getUserFromRequest(req)
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' })
+      }
       const { college_id } = req.query
 
       if (!college_id) {
         return res.status(400).json({ error: 'college_id required' })
       }
 
-      const { data, error } = await supabaseServer
+      const token = req.headers.authorization?.slice(7) || ''
+      const supabaseUser = getSupabaseUserClient(token)
+      const { data, error } = await supabaseUser
         .from('teams')
         .select('*')
         .eq('college_id', college_id)
@@ -37,20 +43,27 @@ export default async function handler(
   } else if (req.method === 'POST') {
     // Create a team
     try {
-      const { name, college_id, created_by } = req.body
-
-      if (!name || !college_id || !created_by) {
-        return res
-          .status(400)
-          .json({ error: 'name, college_id, created_by required' })
+      const user = await getUserFromRequest(req)
+      if (!user) {
+        return res.status(401).json({ error: 'Unauthorized' })
       }
 
-      const { data: team, error: teamError } = await supabaseServer
+      const { name, college_id } = req.body
+
+      if (!name || !college_id) {
+        return res
+          .status(400)
+          .json({ error: 'name and college_id required' })
+      }
+
+      const token = req.headers.authorization?.slice(7) || ''
+      const supabaseUser = getSupabaseUserClient(token)
+      const { data: team, error: teamError } = await supabaseUser
         .from('teams')
         .insert({
           name,
           college_id,
-          created_by,
+          created_by: user.id,
           max_members: 5,
         })
         .select()
@@ -61,11 +74,11 @@ export default async function handler(
       }
 
       // Add creator as accepted member
-      const { error: memberError } = await supabaseServer
+      const { error: memberError } = await supabaseUser
         .from('team_members')
         .insert({
           team_id: team.id,
-          user_id: created_by,
+          user_id: user.id,
           status: 'accepted',
         })
 

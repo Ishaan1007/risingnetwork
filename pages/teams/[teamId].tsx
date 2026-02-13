@@ -36,8 +36,8 @@ type Meeting = {
   description?: string
   team_id: string
   creator_id: string
-  scheduled_time: string
-  duration: number
+  scheduled_for: string
+  duration_minutes: number
   meet_link?: string
   created_at: string
 }
@@ -112,7 +112,7 @@ export default function TeamDetailPage() {
           .from('meetings')
           .select('*')
           .eq('team_id', teamId)
-          .order('scheduled_time', { ascending: true })
+          .order('scheduled_for', { ascending: true })
 
         if (meetingsError) {
           console.error('Meetings fetch error:', meetingsError)
@@ -308,8 +308,8 @@ export default function TeamDetailPage() {
                           <h3>{meeting.title}</h3>
                           {meeting.description && <p>{meeting.description}</p>}
                           <div className="rn-card-meta">
-                            <span>{formatDateTime(meeting.scheduled_time)}</span>
-                            <span>{formatDuration(meeting.duration)}</span>
+                            <span>{formatDateTime(meeting.scheduled_for)}</span>
+                            <span>{formatDuration(meeting.duration_minutes)}</span>
                           </div>
                           <div className="rn-card-actions">
                             {meeting.meet_link ? (
