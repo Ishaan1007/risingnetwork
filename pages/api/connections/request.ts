@@ -34,6 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select('first_name, onesignal_player_id')
       .eq('id', requesterId)
       .single()
+    const requesterProfile = requester as { first_name?: string | null; onesignal_player_id?: string | null } | null
 
     const { data: recipient, error: recipientError } = await supabaseAdmin
       .from('profiles')
@@ -42,7 +43,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single()
     const recipientProfile = recipient as { onesignal_player_id?: string | null; first_name?: string | null } | null
 
-    if (requesterError || recipientError || !requester || !recipientProfile) {
+    if (requesterError || recipientError || !requesterProfile || !recipientProfile) {
       return res.status(404).json({ error: 'User not found' })
     }
 
@@ -70,7 +71,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         requester_id: requesterId,
         recipient_id: recipientId,
         status: 'pending',
-        message: message || `${requester.first_name} wants to connect with you`
+        message: message || `${requesterProfile.first_name || 'Someone'} wants to connect with you`
       })
       .select()
       .single()
