@@ -91,7 +91,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           type: 'connection_request',
           recipientId,
           data: {
-            requesterName: requester.first_name,
+            requesterName: requesterProfile.first_name,
             requesterId: requesterId
           }
         })
