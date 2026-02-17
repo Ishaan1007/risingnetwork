@@ -288,7 +288,7 @@ export default function Profile() {
     e.preventDefault()
     if (!profile || !userId) return
     if (!profile.first_name?.trim()) {
-      setMessage({ type: 'error', text: 'First name is required.' })
+      setMessage({ type: 'error', text: 'Name is required.' })
       return
     }
 
@@ -301,7 +301,6 @@ export default function Profile() {
         .from('profiles')
         .update({
           first_name: profile.first_name,
-          last_name: profile.last_name,
           city: profile.city,
           role: profile.role,
           bio: profile.bio,
@@ -623,9 +622,9 @@ export default function Profile() {
 
         <form onSubmit={handleSubmit} className="rn-form" id="profile-form">
           <div className="rn-form-field">
-            <label htmlFor="firstName">First Name *</label>
+            <label htmlFor="name">Name *</label>
             <input
-              id="firstName"
+              id="name"
               type="text"
               value={profile.first_name || ''}
               onChange={(e) => handleProfileChange('first_name', e.target.value)}
