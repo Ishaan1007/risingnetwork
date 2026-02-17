@@ -20,8 +20,7 @@ type RequestRow = {
   status: string | null
   created_at: string
   profiles?: {
-    first_name?: string | null
-    last_name?: string | null
+    name?: string | null
     avatar_url?: string | null
     city?: string | null
   } | null
@@ -105,7 +104,7 @@ export default function ProjectsPage() {
       const { data } = await supabase
         .from('project_requests')
         .select(
-          'id, project_id, user_id, message, status, created_at, profiles(first_name, last_name, avatar_url, city)'
+          'id, project_id, user_id, message, status, created_at, profiles(name, avatar_url, city)'
         )
         .order('created_at', { ascending: false })
       setRequests((data || []) as RequestRow[])
@@ -299,9 +298,7 @@ export default function ProjectsPage() {
           ) : (
             <div className="rn-connection-grid">
               {requests.map((req) => {
-                const name = req.profiles
-                  ? `${req.profiles.first_name || ''} ${req.profiles.last_name || ''}`.trim()
-                  : 'Member'
+                const name = req.profiles?.name || 'Member'
                 return (
                   <div key={req.id} className="rn-request-card">
                     <div className="rn-connection-head">

@@ -18,8 +18,7 @@ type College = {
 
 type Student = {
   id: string
-  first_name: string
-  last_name: string
+  name: string
   email: string
   bio: string
   linkedin_url?: string
@@ -229,7 +228,7 @@ export default function BuildCollegeTeam() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <Avatar src={student.avatar_url} alt="avatar" size={44} />
                       <div>
-                        {student.first_name} {student.last_name}
+                        {student.name || 'Unknown'}
                       </div>
                     </div>
                   </h3>

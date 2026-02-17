@@ -9,8 +9,7 @@ import { subscribeToNotifications } from '../lib/onesignalClient'
 
 type Profile = {
   id: string
-  first_name: string
-  last_name: string
+  name: string
   city: string
   role?: 'student' | 'freelancer' | 'teacher' | null
   bio: string
@@ -172,7 +171,7 @@ export default function Profile() {
     const updated = { ...prev, [field]: value }
     
     // Track if user has started typing their name
-    if (field === 'first_name' && value && value.trim().length > 0) {
+    if (field === 'name' && value && value.trim().length > 0) {
       setHasStartedTyping(true)
     }
     
@@ -287,7 +286,7 @@ export default function Profile() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!profile || !userId) return
-    if (!profile.first_name?.trim()) {
+    if (!profile.name?.trim()) {
       setMessage({ type: 'error', text: 'Name is required.' })
       return
     }
@@ -300,7 +299,7 @@ export default function Profile() {
       const { error: profileUpdateError } = await supabase
         .from('profiles')
         .update({
-          first_name: profile.first_name,
+          name: profile.name,
           city: profile.city,
           role: profile.role,
           bio: profile.bio,
@@ -626,8 +625,8 @@ export default function Profile() {
             <input
               id="name"
               type="text"
-              value={profile.first_name || ''}
-              onChange={(e) => handleProfileChange('first_name', e.target.value)}
+              value={profile.name || ''}
+              onChange={(e) => handleProfileChange('name', e.target.value)}
             />
           </div>
 

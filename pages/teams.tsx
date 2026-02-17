@@ -7,8 +7,7 @@ import ScheduleMeetModal from '../components/ScheduleMeetModal'
 
 type ConnectedFriend = {
   id: string
-  first_name: string
-  last_name: string
+  name: string
   full_name: string
 }
 
@@ -78,13 +77,11 @@ export default function Teams() {
             requester_id,
             recipient:profiles!connections_recipient_id_fkey (
               id,
-              first_name,
-              last_name
+              name
             ),
             requester:profiles!connections_requester_id_fkey (
               id,
-              first_name,
-              last_name
+              name
             )
           `)
           .eq('status', 'accepted')
@@ -98,9 +95,8 @@ export default function Teams() {
               const friend = conn.requester_id === session.user.id ? conn.recipient : conn.requester
               return {
                 id: friend.id,
-                first_name: friend.first_name,
-                last_name: friend.last_name,
-                full_name: `${friend.first_name} ${friend.last_name}`.trim() || 'Unknown'
+                name: friend.name,
+                full_name: friend.name || 'Unknown'
               }
             })
             .filter((friend: ConnectedFriend) => friend.id !== session.user.id)

@@ -39,8 +39,7 @@ export default async function handler(
       .insert({
         id: user.id,
         email: user.email,
-        first_name: '',
-        last_name: '',
+        name: '',
         city: '',
         role: null,
         bio: '',

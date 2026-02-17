@@ -22,10 +22,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const supabaseAdmin = getSupabaseAdmin()
     const { data: recipient, error: recipientError } = await supabaseAdmin
       .from('profiles')
-      .select('onesignal_player_id, first_name')
+      .select('onesignal_player_id, name')
       .eq('id', recipientId)
       .single()
-    const recipientProfile = recipient as { onesignal_player_id?: string | null; first_name?: string | null } | null
+    const recipientProfile = recipient as { onesignal_player_id?: string | null; name?: string | null } | null
 
     if (recipientError || !recipientProfile) {
       return res.status(404).json({ error: 'Recipient not found' })
@@ -108,7 +108,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(200).json({ 
         success: true, 
         message,
-        recipient: recipientProfile.first_name 
+        recipient: recipientProfile.name 
       })
     } else {
       return res.status(500).json({ error: 'Failed to send notification' })

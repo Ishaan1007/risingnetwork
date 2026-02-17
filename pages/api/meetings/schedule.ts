@@ -140,8 +140,7 @@ export default async function handler(
             user_id,
             status,
             profiles (
-              first_name,
-              last_name
+              name
             )
           )
         `)

@@ -14,8 +14,7 @@ type TeamInvitation = {
     name: string
     created_by: string
     profiles: {
-      first_name: string
-      last_name: string
+      name: string
     }
   }
 }
@@ -167,7 +166,7 @@ export default function TeamInvitations() {
                     {invitation.teams.name}
                   </h3>
                   <p style={{ margin: 0, fontSize: 14, color: '#6b7280' }}>
-                    Invited by {invitation.teams.profiles.first_name} {invitation.teams.profiles.last_name}
+                    Invited by {invitation.teams.profiles.name || 'Unknown'}
                   </p>
                 </div>
               </div>

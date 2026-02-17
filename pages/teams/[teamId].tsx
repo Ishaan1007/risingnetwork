@@ -23,8 +23,7 @@ type TeamMember = {
   created_at: string
   profiles: {
     id: string
-    first_name: string
-    last_name?: string
+    name: string
     avatar_url?: string
     email: string
   }
@@ -88,8 +87,7 @@ export default function TeamDetailPage() {
             *,
             profiles!team_members_user_id_fkey (
               id,
-              first_name,
-              last_name,
+              name,
               avatar_url,
               email
             )
@@ -266,7 +264,7 @@ export default function TeamDetailPage() {
                     channelId={team.id}
                     channelType="team"
                     currentUserId={currentUser.id}
-                    currentUserName={currentUser.user_metadata?.first_name || 'User'}
+                    currentUserName={currentUser.user_metadata?.name || currentUser.user_metadata?.first_name || 'User'}
                     currentUserAvatar={currentUser.user_metadata?.avatar_url}
                     placeholder="Message your team..."
                   />
@@ -279,8 +277,8 @@ export default function TeamDetailPage() {
                   <div className="rn-friends-grid">
                     {members.map((member) => (
                       <div key={member.id} className="rn-friend-card">
-                        <Avatar src={member.profiles.avatar_url} alt={member.profiles.first_name} size={48} />
-                        <h4>{member.profiles.first_name} {member.profiles.last_name || ''}</h4>
+                        <Avatar src={member.profiles.avatar_url} alt={member.profiles.name} size={48} />
+                        <h4>{member.profiles.name || 'Unknown'}</h4>
                         <p className="rn-muted">{member.profiles.email}</p>
                         <button
                           className="rn-link-btn"

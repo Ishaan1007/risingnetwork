@@ -13,8 +13,7 @@ type Connection = {
 
 type Profile = {
   id: string
-  first_name: string
-  last_name: string
+  name: string
   avatar_url?: string | null
   city?: string | null
   role?: string | null
@@ -87,7 +86,7 @@ export default function Connections() {
       if (ids.length > 0) {
         const { data: profileData } = await supabase
           .from('profiles')
-          .select('id, first_name, last_name, avatar_url, city, role')
+          .select('id, name, avatar_url, city, role')
           .in('id', ids)
 
         const map: Record<string, Profile> = {}
@@ -117,7 +116,7 @@ export default function Connections() {
     if (!p) return { name: 'Unknown', meta: '' }
     const role = p.role ? p.role.charAt(0).toUpperCase() + p.role.slice(1) : 'Professional'
     const meta = [role, p.city].filter(Boolean).join(' • ')
-    return { name: `${p.first_name} ${p.last_name}`.trim(), meta }
+    return { name: p.name || 'Unknown', meta }
   }
 
   const incomingCards = useMemo(

@@ -28,8 +28,7 @@ type MeetingParticipant = {
   status: 'invited' | 'accepted' | 'declined' | 'joined'
   profiles: {
     id: string
-    first_name: string
-    last_name?: string
+    name: string
     avatar_url?: string
     email: string
   }
@@ -87,8 +86,7 @@ export default function MeetingDetailPage() {
             *,
             profiles (
               id,
-              first_name,
-              last_name,
+              name,
               avatar_url,
               email
             )
@@ -303,7 +301,7 @@ export default function MeetingDetailPage() {
                   channelId={meeting.id}
                   channelType="meeting"
                   currentUserId={currentUser.id}
-                  currentUserName={currentUser.user_metadata?.first_name || 'User'}
+                  currentUserName={currentUser.user_metadata?.name || currentUser.user_metadata?.first_name || 'User'}
                   currentUserAvatar={currentUser.user_metadata?.avatar_url}
                   placeholder="Message meeting participants..."
                 />
@@ -329,8 +327,8 @@ export default function MeetingDetailPage() {
                 <div className="rn-friends-grid">
                   {participants.map((participant) => (
                     <div key={participant.id} className="rn-friend-card">
-                      <Avatar src={participant.profiles.avatar_url} alt={participant.profiles.first_name} size={48} />
-                      <h4>{participant.profiles.first_name} {participant.profiles.last_name || ''}</h4>
+                      <Avatar src={participant.profiles.avatar_url} alt={participant.profiles.name} size={48} />
+                      <h4>{participant.profiles.name || 'Unknown'}</h4>
                       <span className={`rn-badge ${participant.status}`}>
                         {participant.status}
                       </span>

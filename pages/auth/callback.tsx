@@ -23,8 +23,11 @@ export default function AuthCallback() {
           const profilePicture = syncProfilePicture(session.user)
           
           // Get name from Google profile
-          const googleFirstName = session.user.user_metadata?.first_name || session.user.user_metadata?.given_name
-          const googleLastName = session.user.user_metadata?.last_name || session.user.user_metadata?.family_name
+          const googleName =
+            session.user.user_metadata?.name ||
+            [session.user.user_metadata?.given_name, session.user.user_metadata?.family_name]
+              .filter(Boolean)
+              .join(' ')
           
           // Check if user has existing profile
           const { data: existingProfile } = await supabase
@@ -43,12 +46,8 @@ export default function AuthCallback() {
               updateData.avatar_url = profilePicture
             }
             
-            if (googleFirstName && !existingProfile.first_name) {
-              updateData.first_name = googleFirstName
-            }
-            
-            if (googleLastName && !existingProfile.last_name) {
-              updateData.last_name = googleLastName
+            if (googleName && !existingProfile.name) {
+              updateData.name = googleName
             }
             
             // Only update if there are changes
@@ -62,8 +61,7 @@ export default function AuthCallback() {
             // Create new profile with Google data
             const newProfileData: any = {
               id: session.user.id,
-              first_name: googleFirstName || 'User',
-              last_name: googleLastName || '',
+              name: googleName || 'User',
               bio: '',
               city: '',
               created_at: new Date().toISOString(),
@@ -80,11 +78,9 @@ export default function AuthCallback() {
           }
           
           // Check if user has a complete name (either from Google or database)
-          const hasCompleteName = (googleFirstName && googleLastName) || 
-                              (existingProfile?.first_name && existingProfile?.last_name) ||
-                              (existingProfile?.first_name && !existingProfile?.last_name) // Allow first name only
+          const hasCompleteName = Boolean(googleName || existingProfile?.name)
           
-          const displayName = googleFirstName || existingProfile?.first_name || 'User'
+          const displayName = googleName || existingProfile?.name || 'User'
           
           // Set state for rendering
           setHasCompleteName(hasCompleteName)

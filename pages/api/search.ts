@@ -21,8 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .select(
         `
         id,
-        first_name,
-        last_name,
+        name,
         city,
         role,
         bio,
@@ -35,7 +34,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         { count: 'exact' }
       )
       .or(
-        `first_name.ilike.%${term}%,last_name.ilike.%${term}%,city.ilike.%${term}%`
+        `name.ilike.%${term}%,city.ilike.%${term}%`
       )
 
     if (error) {
@@ -50,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       const skills = (p.user_skills || []).map((us: any) => us?.skills?.name?.toLowerCase()).filter(Boolean)
       if (skills.some((s: string) => s.includes(lowered))) return true
       // name or city already matched in or() but we'll ensure
-      if (`${p.first_name} ${p.last_name}`.toLowerCase().includes(lowered)) return true
+      if ((p.name || '').toLowerCase().includes(lowered)) return true
       if ((p.city || '').toLowerCase().includes(lowered)) return true
       return false
     })
@@ -58,8 +57,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const paged = filtered.slice(offsetNum, offsetNum + limitNum)
     const transformed = paged.map((p: any) => ({
       id: p.id,
-      first_name: p.first_name,
-      last_name: p.last_name,
+      name: p.name,
       city: p.city,
       role: p.role,
       bio: p.bio,

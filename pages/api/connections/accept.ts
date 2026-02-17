@@ -28,16 +28,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get both users' profiles
     const { data: requester, error: requesterError } = await supabaseAdmin
       .from('profiles')
-      .select('first_name, onesignal_player_id')
+      .select('name, onesignal_player_id')
       .eq('id', requesterId)
       .single()
 
     const { data: recipient, error: recipientError } = await supabaseAdmin
       .from('profiles')
-      .select('first_name, onesignal_player_id')
+      .select('name, onesignal_player_id')
       .eq('id', recipientId)
       .single()
-    const recipientProfile = recipient as { onesignal_player_id?: string | null; first_name?: string | null } | null
+    const recipientProfile = recipient as { onesignal_player_id?: string | null; name?: string | null } | null
 
     if (requesterError || recipientError || !requester || !recipientProfile) {
       return res.status(404).json({ error: 'User not found' })
@@ -74,7 +74,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           type: 'connection_accepted',
           recipientId: requesterId,
           data: {
-            friendName: recipientProfile.first_name,
+            friendName: recipientProfile.name,
             friendId: recipientId
           }
         })

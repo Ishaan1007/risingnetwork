@@ -73,15 +73,15 @@ export default async function handler(
     try {
       const { data: recipient } = await supabaseAdmin
         .from('profiles')
-        .select('onesignal_player_id, first_name')
+        .select('onesignal_player_id, name')
         .eq('id', user_id)
         .single()
-      const recipientProfile = recipient as { onesignal_player_id?: string | null; first_name?: string | null } | null
+      const recipientProfile = recipient as { onesignal_player_id?: string | null; name?: string | null } | null
 
       if (recipientProfile?.onesignal_player_id) {
         await sendTeamInvitation(
           recipientProfile.onesignal_player_id,
-          user.user_metadata?.first_name || 'Someone',
+          user.user_metadata?.name || user.user_metadata?.first_name || 'Someone',
           team.name,
           String(team_id)
         )

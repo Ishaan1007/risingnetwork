@@ -27,8 +27,7 @@ export default async function handler(
             name,
             created_by,
             profiles!teams_created_by_fkey (
-              first_name,
-              last_name
+              name
             )
           )
         `)

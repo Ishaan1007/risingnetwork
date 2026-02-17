@@ -25,8 +25,7 @@ export default async function handler(
       .select(
         `
         id,
-        first_name,
-        last_name,
+        name,
         city,
         role,
         bio,
@@ -104,8 +103,7 @@ export default async function handler(
     // Transform response to flatten skills
     const transformed = paged.map((profile: any) => ({
       id: profile.id,
-      first_name: profile.first_name,
-      last_name: profile.last_name,
+      name: profile.name,
       city: profile.city,
       role: profile.role,
       bio: profile.bio,

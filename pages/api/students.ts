@@ -24,8 +24,7 @@ export default async function handler(
       .select(
         `
         id,
-        first_name,
-        last_name,
+        name,
         role,
         bio,
         linkedin_url,
@@ -89,8 +88,7 @@ export default async function handler(
       const collegeInfo = profile.college_info?.[0]
       return {
         id: profile.id,
-        first_name: profile.first_name,
-        last_name: profile.last_name,
+        name: profile.name,
         bio: profile.bio,
         linkedin_url: profile.linkedin_url,
         github_url: profile.github_url,

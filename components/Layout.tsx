@@ -79,7 +79,7 @@ export default function Layout({ children }: LayoutProps) {
       try {
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
-          .select('first_name')
+          .select('name')
           .eq('id', session.user.id)
           .single()
 
@@ -89,7 +89,7 @@ export default function Layout({ children }: LayoutProps) {
         }
 
         let incomplete = false
-        if (!profileData.first_name || profileData.first_name.trim() === '') incomplete = true
+        if (!profileData.name || profileData.name.trim() === '') incomplete = true
 
         if (isMounted) setProfileIncomplete(incomplete)
       } catch (error) {

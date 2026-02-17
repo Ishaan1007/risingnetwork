@@ -12,8 +12,7 @@ type Skill = {
 
 type Profile = {
   id: string
-  first_name: string
-  last_name: string
+  name: string
   role: string | null
   city: string | null
   bio: string | null
@@ -45,8 +44,7 @@ export default function PublicProfile() {
         .select(
           `
           id,
-          first_name,
-          last_name,
+          name,
           role,
           city,
           bio,
@@ -222,7 +220,7 @@ export default function PublicProfile() {
             <Avatar src={profile.avatar_url} alt="avatar" size={96} />
             <div className="rn-profile-headtext">
               <h1>
-                {profile.first_name} {profile.last_name}
+                {profile.name || 'Unknown'}
               </h1>
               <div className="rn-profile-meta">
                 <span>{profile.role ? profile.role.charAt(0).toUpperCase() + profile.role.slice(1) : 'Professional'}</span>

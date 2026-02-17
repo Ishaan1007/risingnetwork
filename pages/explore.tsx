@@ -12,8 +12,7 @@ type Skill = {
 
 type Person = {
   id: string
-  first_name: string
-  last_name: string
+  name: string
   email: string
   city: string
   role?: string | null
@@ -376,7 +375,7 @@ export default function ExploreFreelancers() {
                       <Avatar src={freelancer.avatar_url} alt="avatar" size={56} />
                       <div>
                         <h3>
-                          {freelancer.first_name} {freelancer.last_name}
+                          {freelancer.name || 'Unknown'}
                         </h3>
                         <div className="rn-card-meta">
                           <span>

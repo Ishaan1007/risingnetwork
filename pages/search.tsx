@@ -7,8 +7,7 @@ type Skill = { id: number; name: string }
 
 type Profile = {
   id: string
-  first_name: string
-  last_name: string
+  name: string
   city?: string
   role?: string
   bio?: string
@@ -83,7 +82,7 @@ export default function SearchPage() {
             <div key={r.id} className="card">
               <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                 <Avatar src={r.avatar_url} alt="avatar" size={56} />
-                <h3 style={{ margin: 0 }}>{r.first_name} {r.last_name} <small style={{ color: '#6b7280' }}>{r.role}</small></h3>
+                <h3 style={{ margin: 0 }}>{r.name || 'Unknown'} <small style={{ color: '#6b7280' }}>{r.role}</small></h3>
               </div>
               {r.city && <p style={{ color: '#6b7280', marginTop: 6 }}>{r.city}</p>}
               {r.bio && <p style={{ marginTop: 8 }}>{r.bio}</p>}
