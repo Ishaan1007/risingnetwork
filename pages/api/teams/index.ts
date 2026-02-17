@@ -30,10 +30,24 @@ export default async function handler(
         return res.status(500).json({ error: error.message })
       }
 
+      const teamIds = (data || []).map((team: any) => team.id)
+      let memberCounts = new Map<string, number>()
+      if (teamIds.length > 0) {
+        const { data: memberRows } = await supabaseUser
+          .from('team_members')
+          .select('team_id, status')
+          .in('team_id', teamIds)
+          .eq('status', 'accepted')
+
+        ;(memberRows || []).forEach((row: any) => {
+          memberCounts.set(row.team_id, (memberCounts.get(row.team_id) || 0) + 1)
+        })
+      }
+
       const transformed = (data || []).map((team: any) => ({
         ...team,
-        member_count: 0, // Will be updated later
-        members: [], // Will be updated later
+        max_members: team.max_members || null,
+        member_count: memberCounts.get(team.id) || 0,
       }))
 
       return res.status(200).json({ teams: transformed })
@@ -64,7 +78,7 @@ export default async function handler(
           name,
           college_id,
           created_by: user.id,
-          max_members: 5,
+          max_members: 9999,
         })
         .select()
         .single()

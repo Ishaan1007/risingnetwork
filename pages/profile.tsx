@@ -185,7 +185,7 @@ export default function Profile() {
     )
   }, [])
 
-  const handleSyncAvatar = async () => {
+  const handleSyncProfileFromGoogle = async () => {
     if (!userId) return
     
     setSyncingAvatar(true)
@@ -196,32 +196,41 @@ export default function Profile() {
       const { data: { session } } = await supabase.auth.getSession()
       if (!session?.user) throw new Error('No user session')
       
-      // Sync profile picture
+      // Sync profile picture and display name from Google profile metadata
       const profilePicture = syncProfilePicture(session.user)
+      const googleName =
+        session.user.user_metadata?.name ||
+        [session.user.user_metadata?.given_name, session.user.user_metadata?.family_name]
+          .filter(Boolean)
+          .join(' ')
       
-      if (profilePicture) {
-        // Update profile with new avatar
+      if (profilePicture || googleName) {
+        const updates: Record<string, any> = {
+          updated_at: new Date().toISOString(),
+        }
+
+        if (profilePicture) updates.avatar_url = profilePicture
+        if (googleName) updates.name = googleName
+
+        // Update profile with synced fields
         const { error } = await supabase
           .from('profiles')
-          .update({ 
-            avatar_url: profilePicture,
-            updated_at: new Date().toISOString()
-          })
+          .update(updates)
           .eq('id', userId)
         
         if (error) throw error
         
         // Update local state
-        setProfile(prev => prev ? { ...prev, avatar_url: profilePicture } : null)
-        setAvatarPreview(profilePicture)
+        setProfile(prev => prev ? { ...prev, ...updates } : null)
+        if (profilePicture) setAvatarPreview(profilePicture)
         
-        setMessage({ type: 'success', text: 'Profile picture synced successfully!' })
+        setMessage({ type: 'success', text: 'Profile synced from Google successfully!' })
       } else {
-        setMessage({ type: 'error', text: 'No profile picture available to sync.' })
+        setMessage({ type: 'error', text: 'No Google profile data available to sync.' })
       }
     } catch (error) {
-      console.error('Error syncing avatar:', error)
-      setMessage({ type: 'error', text: 'Failed to sync profile picture.' })
+      console.error('Error syncing profile:', error)
+      setMessage({ type: 'error', text: 'Failed to sync from Google.' })
     } finally {
       setSyncingAvatar(false)
     }
@@ -588,7 +597,7 @@ export default function Profile() {
               <button
                 type="button"
                 className="rn-secondary-btn"
-                onClick={handleSyncAvatar}
+                onClick={handleSyncProfileFromGoogle}
                 disabled={syncingAvatar}
                 style={{ marginLeft: 8 }}
               >

@@ -21,6 +21,9 @@ export default async function handler(
 
     const token = req.headers.authorization?.slice(7) || ''
     const supabaseUser = getSupabaseUserClient(token)
+    const inferredName =
+      (user.user_metadata?.name as string | undefined) ||
+      [user.user_metadata?.given_name, user.user_metadata?.family_name].filter(Boolean).join(' ')
 
     // Check if profile already exists
     const { data: existing } = await supabaseUser
@@ -39,7 +42,7 @@ export default async function handler(
       .insert({
         id: user.id,
         email: user.email,
-        name: '',
+        name: inferredName || '',
         city: '',
         role: null,
         bio: '',
