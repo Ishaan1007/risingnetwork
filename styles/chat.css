@@ -330,33 +330,3 @@
     font-size: 13px;
   }
 }
-
-/* Dark mode support (if needed) */
-@media (prefers-color-scheme: dark) {
-  .rn-chat-container {
-    background: #1e293b;
-    border-color: #334155;
-  }
-  
-  .rn-chat-header {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
-    border-color: #334155;
-  }
-  
-  .rn-message-text {
-    background: #334155;
-    border-color: #475569;
-    color: #f1f5f9;
-  }
-  
-  .rn-chat-input {
-    background: #1e293b;
-    border-color: #334155;
-  }
-  
-  .rn-input-wrapper input {
-    background: #334155;
-    border-color: #475569;
-    color: #f1f5f9;
-  }
-}

@@ -48,13 +48,21 @@ export default function Chat({
   const [onlineUsers, setOnlineUsers] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isConnected, setIsConnected] = useState(false)
+  const [chatError, setChatError] = useState<string | null>(null)
+  const [retryCount, setRetryCount] = useState(0)
   const [typingManager, setTypingManager] = useState<TypingManager | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
+    let mounted = true
+    let connectionTimeout: ReturnType<typeof setTimeout> | null = null
+
     const setupChat = async () => {
       try {
+        if (!mounted) return
         setIsLoading(true)
+        setChatError(null)
+        setIsConnected(false)
 
         // Initialize Ably with Chat SDK
         const {
@@ -77,11 +85,25 @@ export default function Chat({
         // Connection handlers
         chat.connection.onStatusChange((change) => {
           console.log(`Chat connection status is currently ${change.current}!`)
+          if (!mounted) return
           setIsConnected(change.current === 'connected')
           if (change.current === 'connected') {
+            if (connectionTimeout) clearTimeout(connectionTimeout)
             setIsLoading(false)
+            setChatError(null)
+          }
+          if (change.current === 'failed' || change.current === 'suspended') {
+            if (connectionTimeout) clearTimeout(connectionTimeout)
+            setIsLoading(false)
+            setChatError('Unable to connect to chat right now. Please retry.')
           }
         })
+
+        connectionTimeout = setTimeout(() => {
+          if (!mounted) return
+          setIsLoading(false)
+          setChatError('Chat is taking too long to connect. Please retry.')
+        }, 12000)
 
         // Get chat room
         const roomId = channelType === 'team' ? `team:${channelId}` : `meeting:${channelId}`
@@ -166,20 +188,25 @@ export default function Chat({
 
       } catch (error) {
         console.error('Error setting up chat:', error)
-        setIsLoading(false)
+        if (mounted) {
+          setIsLoading(false)
+          setChatError('Unable to initialize chat. Please retry.')
+        }
       }
     }
 
     setupChat()
 
     return () => {
+      mounted = false
+      if (connectionTimeout) clearTimeout(connectionTimeout)
       // Cleanup
       if (typingManager) {
         typingManager.cleanup()
       }
       leavePresence(channelType === 'team' ? `team:${channelId}` : `meeting:${channelId}`)
     }
-  }, [channelId, channelType, currentUserId, currentUserName, currentUserAvatar])
+  }, [channelId, channelType, currentUserId, currentUserName, currentUserAvatar, retryCount])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -258,6 +285,23 @@ export default function Chat({
         <div className="rn-chat-loading">
           <LoaderIcon size={20} />
           <span>Connecting to chat...</span>
+        </div>
+      </div>
+    )
+  }
+
+  if (chatError) {
+    return (
+      <div className="rn-chat-container">
+        <div className="rn-chat-loading" style={{ flexDirection: 'column', gap: 10 }}>
+          <span>{chatError}</span>
+          <button
+            type="button"
+            className="rn-primary-btn"
+            onClick={() => setRetryCount((prev) => prev + 1)}
+          >
+            Retry Chat
+          </button>
         </div>
       </div>
     )
