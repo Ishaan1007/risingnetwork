@@ -253,6 +253,19 @@ export default function PublicProfile() {
               </div>
               {session?.user?.id !== profile.id && (
                 <div className="rn-profile-actions">
+                  <button
+                    className="rn-secondary-btn"
+                    type="button"
+                    onClick={() => {
+                      if (!session?.user) {
+                        alert('Please log in to message users.')
+                        return
+                      }
+                      router.push(`/messages/${profile.id}`)
+                    }}
+                  >
+                    Message
+                  </button>
                   {connectionStatus === 'received' ? (
                     <>
                       <button
