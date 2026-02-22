@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
 import Avatar from '../components/Avatar'
-import { ChevronLeftIcon, ChevronRightIcon, LoaderIcon } from '../components/Icons'
+import { ChevronLeftIcon, ChevronRightIcon } from '../components/Icons'
+import Skeleton from '../components/Skeleton'
 
 type Skill = {
   id: number
@@ -198,8 +199,40 @@ export default function BuildCollegeTeam() {
         </h2>
 
         {loading ? (
-          <div role="status" aria-label="Loading" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-            <span className="spin"><LoaderIcon size={20} /></span>
+          <div role="status" aria-label="Loading students" aria-busy="true">
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                gap: 16,
+                marginBottom: 32,
+              }}
+            >
+              {[0, 1, 2, 3].map((idx) => (
+                <div
+                  key={idx}
+                  style={{
+                    border: '1px solid #d1d5db',
+                    borderRadius: 8,
+                    padding: 16,
+                    backgroundColor: 'white',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                    <Skeleton className="rn-skeleton-circle" style={{ width: 44, height: 44 }} />
+                    <Skeleton style={{ width: '50%', height: 16 }} />
+                  </div>
+                  <Skeleton style={{ width: '62%', height: 14, marginBottom: 8 }} />
+                  <Skeleton style={{ width: '100%', height: 14, marginBottom: 6 }} />
+                  <Skeleton style={{ width: '86%', height: 14, marginBottom: 12 }} />
+                  <div style={{ display: 'flex', gap: 6 }}>
+                    <Skeleton style={{ width: 58, height: 28 }} />
+                    <Skeleton style={{ width: 58, height: 28 }} />
+                    <Skeleton style={{ width: 58, height: 28 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ) : students.length === 0 ? (
           <p style={{ color: '#6b7280' }}>No students found matching your filters.</p>

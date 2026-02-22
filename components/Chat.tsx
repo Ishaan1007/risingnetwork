@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Avatar from './Avatar'
-import { LoaderIcon } from './Icons'
+import Skeleton from './Skeleton'
 import { 
   initializeAbly, 
   subscribeToMessages,
@@ -282,9 +282,32 @@ export default function Chat({
   if (isLoading) {
     return (
       <div className="rn-chat-container">
-        <div className="rn-chat-loading">
-          <LoaderIcon size={20} />
-          <span>Connecting to chat...</span>
+        <div className="rn-chat-skeleton" aria-busy="true" aria-live="polite">
+          <div className="rn-chat-skeleton-header">
+            <div className="rn-skeleton-stack" style={{ width: 180 }}>
+              <Skeleton style={{ width: '70%', height: 18 }} />
+              <Skeleton style={{ width: '50%', height: 12 }} />
+            </div>
+            <div className="rn-skeleton-row">
+              <Skeleton className="rn-skeleton-circle" style={{ width: 28, height: 28 }} />
+              <Skeleton className="rn-skeleton-circle" style={{ width: 28, height: 28 }} />
+              <Skeleton className="rn-skeleton-circle" style={{ width: 28, height: 28 }} />
+            </div>
+          </div>
+          <div className="rn-chat-skeleton-body">
+            {[0, 1, 2, 3].map((idx) => (
+              <div key={idx} className={`rn-chat-skeleton-message ${idx % 2 ? 'own' : ''}`}>
+                <Skeleton className="rn-skeleton-circle" style={{ width: 32, height: 32 }} />
+                <div className="rn-skeleton-stack" style={{ width: idx % 2 ? 190 : 230 }}>
+                  <Skeleton style={{ width: '35%', height: 12 }} />
+                  <Skeleton style={{ width: '100%', height: 38, borderRadius: 12 }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="rn-chat-skeleton-input">
+            <Skeleton style={{ width: '100%', height: 42 }} />
+          </div>
         </div>
       </div>
     )

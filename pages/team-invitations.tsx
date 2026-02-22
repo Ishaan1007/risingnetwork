@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
-import { LoaderIcon, CheckIcon, XIcon } from '../components/Icons'
+import { XIcon } from '../components/Icons'
 import Avatar from '../components/Avatar'
+import Skeleton from '../components/Skeleton'
 
 type TeamInvitation = {
   id: string
@@ -108,11 +109,27 @@ export default function TeamInvitations() {
 
   if (loading) {
     return (
-      <main className="rn-shell">
-        <div role="status" aria-label="Loading" className="rn-loading">
-          <span className="spin">
-            <LoaderIcon size={20} />
-          </span>
+      <main style={{ padding: 24, maxWidth: 800, margin: '0 auto' }} aria-busy="true" aria-live="polite">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 24 }}>
+          <Skeleton style={{ width: 36, height: 36, borderRadius: 8 }} />
+          <Skeleton style={{ width: 220, height: 32 }} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {[0, 1, 2].map((idx) => (
+            <div key={idx} className="rn-card" style={{ padding: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                <Skeleton className="rn-skeleton-circle" style={{ width: 48, height: 48 }} />
+                <div className="rn-skeleton-stack" style={{ width: '60%' }}>
+                  <Skeleton style={{ width: '70%', height: 16 }} />
+                  <Skeleton style={{ width: '100%', height: 14 }} />
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+                <Skeleton style={{ width: 92, height: 36 }} />
+                <Skeleton style={{ width: 92, height: 36 }} />
+              </div>
+            </div>
+          ))}
         </div>
       </main>
     )

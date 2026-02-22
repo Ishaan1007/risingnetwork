@@ -3,7 +3,7 @@ import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabaseClient'
 import Avatar from '../../components/Avatar'
 import Chat from '../../components/Chat'
-import { LoaderIcon } from '../../components/Icons'
+import Skeleton from '../../components/Skeleton'
 
 type Meeting = {
   id: string
@@ -199,10 +199,50 @@ export default function MeetingDetailPage() {
 
   if (loading) {
     return (
-      <div className="rn-shell">
-        <div className="rn-loading">
-          <LoaderIcon size={24} />
-          <span>Loading meeting...</span>
+      <div className="rn-shell" aria-busy="true" aria-live="polite">
+        <div className="rn-teams-header">
+          <div className="rn-skeleton-stack" style={{ width: 460 }}>
+            <Skeleton style={{ width: '62%', height: 30 }} />
+            <Skeleton style={{ width: '100%', height: 16 }} />
+            <Skeleton style={{ width: '78%', height: 14 }} />
+          </div>
+        </div>
+        <div className="rn-layout">
+          <div className="rn-panel">
+            <div className="rn-tabs">
+              <Skeleton style={{ width: 80, height: 34 }} />
+              <Skeleton style={{ width: 132, height: 34 }} />
+              <Skeleton style={{ width: 80, height: 34 }} />
+            </div>
+            <div className="rn-tab-content rn-skeleton-stack" style={{ marginTop: 14 }}>
+              {[0, 1, 2].map((idx) => (
+                <div key={idx} className="rn-skeleton-row">
+                  <Skeleton className="rn-skeleton-circle" style={{ width: 48, height: 48 }} />
+                  <div className="rn-skeleton-stack" style={{ flex: 1 }}>
+                    <Skeleton style={{ width: '50%', height: 14 }} />
+                    <Skeleton style={{ width: '70%', height: 13 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="rn-main-content rn-skeleton-stack">
+            <div className="rn-card">
+              <Skeleton style={{ width: 180, height: 24, marginBottom: 14 }} />
+              <div className="rn-team-stats">
+                {[0, 1, 2].map((idx) => (
+                  <div key={idx} className="rn-stat">
+                    <Skeleton style={{ width: 72, height: 28, marginBottom: 8 }} />
+                    <Skeleton style={{ width: 90, height: 12 }} />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="rn-card">
+              <Skeleton style={{ width: 152, height: 22, marginBottom: 10 }} />
+              <Skeleton style={{ width: '100%', height: 14 }} />
+            </div>
+          </div>
         </div>
       </div>
     )

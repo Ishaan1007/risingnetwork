@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabaseClient'
 import { syncProfilePicture } from '../../lib/gravatar'
+import Skeleton from '../../components/Skeleton'
 
 export default function AuthCallback() {
   const router = useRouter()
@@ -110,8 +111,23 @@ export default function AuthCallback() {
 
   if (loading) {
     return (
-      <div style={{ padding: 24, textAlign: 'center' }}>
-        <p>Setting up your profile...</p>
+      <div style={{ padding: 24, maxWidth: 460, margin: '0 auto' }} aria-busy="true" aria-live="polite">
+        <div
+          style={{
+            border: '1px solid #dbe7ff',
+            borderRadius: 12,
+            padding: 18,
+            backgroundColor: '#f8fbff',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+          }}
+        >
+          <Skeleton style={{ width: '52%', height: 22 }} />
+          <Skeleton style={{ width: '100%', height: 14 }} />
+          <Skeleton style={{ width: '82%', height: 14 }} />
+          <Skeleton style={{ width: 146, height: 38, marginTop: 4 }} />
+        </div>
       </div>
     )
   }

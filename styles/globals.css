@@ -983,6 +983,52 @@ pre {
   color: var(--rn-muted);
 }
 
+.rn-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #e4eaf5;
+}
+
+.rn-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0));
+  animation: rn-skeleton-shimmer 1.15s ease-in-out infinite;
+}
+
+.rn-skeleton-circle {
+  border-radius: 999px;
+}
+
+.rn-skeleton-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.rn-skeleton-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.rn-skeleton-card {
+  background: var(--rn-surface);
+  border: 1px solid var(--rn-line);
+  border-radius: 18px;
+  padding: 18px;
+  box-shadow: var(--rn-shadow);
+}
+
+@keyframes rn-skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 .rn-profile-shell {
   max-width: 760px;
   margin: 26px auto 80px;

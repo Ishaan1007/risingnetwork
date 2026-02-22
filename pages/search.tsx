@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import Avatar from '../components/Avatar'
-import { LoaderIcon } from '../components/Icons'
+import Skeleton from '../components/Skeleton'
 
 type Skill = { id: number; name: string }
 
@@ -66,10 +66,24 @@ export default function SearchPage() {
       )}
 
       {loading ? (
-        <div className="card">
-          <div role="status" aria-label="Searching" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 8 }}>
-            <span className="spin"><LoaderIcon size={20} /></span>
-          </div>
+        <div role="status" aria-label="Searching" aria-busy="true" style={{ display: 'grid', gap: 12 }}>
+          {[0, 1, 2].map((idx) => (
+            <div key={idx} className="card">
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <Skeleton className="rn-skeleton-circle" style={{ width: 56, height: 56 }} />
+                <div className="rn-skeleton-stack" style={{ width: '55%' }}>
+                  <Skeleton style={{ width: '70%', height: 18 }} />
+                  <Skeleton style={{ width: '45%', height: 14 }} />
+                </div>
+              </div>
+              <Skeleton style={{ width: '35%', height: 14, marginTop: 10 }} />
+              <Skeleton style={{ width: '100%', height: 14, marginTop: 10 }} />
+              <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <Skeleton style={{ width: 98, height: 32 }} />
+                <Skeleton style={{ width: 90, height: 32 }} />
+              </div>
+            </div>
+          ))}
         </div>
       ) : results.length === 0 ? (
         <div className="card">

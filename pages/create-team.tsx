@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
-import { PlusIcon } from '../components/Icons'
-import Avatar from '../components/Avatar'
+import Skeleton from '../components/Skeleton'
 
 export default function CreateTeam() {
   const router = useRouter()
@@ -98,11 +97,17 @@ export default function CreateTeam() {
 
   if (loading) {
     return (
-      <main className="rn-shell">
-        <div role="status" aria-label="Loading" className="rn-loading">
-          <span className="spin">
-            <PlusIcon size={20} />
-          </span>
+      <main style={{ padding: 24, maxWidth: 600, margin: '0 auto' }} aria-busy="true" aria-live="polite">
+        <Skeleton style={{ width: 230, height: 34, marginBottom: 24 }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            <Skeleton style={{ width: 110, height: 16 }} />
+            <Skeleton style={{ width: '100%', height: 46 }} />
+          </div>
+          <div style={{ display: 'flex', gap: 12 }}>
+            <Skeleton style={{ flex: 1, height: 44 }} />
+            <Skeleton style={{ flex: 1, height: 44 }} />
+          </div>
         </div>
       </main>
     )

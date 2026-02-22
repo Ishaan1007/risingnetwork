@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
-import { LoaderIcon, PlusIcon } from '../components/Icons'
+import { PlusIcon } from '../components/Icons'
+import Skeleton from '../components/Skeleton'
 
 type Team = {
   id: number
@@ -89,11 +90,32 @@ export default function Teams() {
 
   if (loading) {
     return (
-      <main className="rn-shell">
-        <div role="status" aria-label="Loading" className="rn-loading">
-          <span className="spin">
-            <LoaderIcon size={20} />
-          </span>
+      <main className="rn-teams-shell" aria-busy="true" aria-live="polite">
+        <div className="rn-teams-header">
+          <Skeleton style={{ width: 160, height: 34 }} />
+        </div>
+        <div className="rn-tabs">
+          <Skeleton style={{ width: 108, height: 36, borderRadius: 12 }} />
+        </div>
+        <div className="rn-teams-bar">
+          <Skeleton style={{ width: 130, height: 16 }} />
+          <div className="rn-teams-actions">
+            <Skeleton style={{ width: 130, height: 36 }} />
+            <Skeleton style={{ width: 128, height: 36 }} />
+          </div>
+        </div>
+        <div className="rn-team-grid">
+          {[0, 1, 2].map((idx) => (
+            <div key={idx} className="rn-team-card">
+              <Skeleton style={{ width: '52%', height: 20, marginBottom: 10 }} />
+              <Skeleton style={{ width: '100%', height: 14 }} />
+              <Skeleton style={{ width: '90%', height: 14, marginTop: 6 }} />
+              <div className="rn-team-meta" style={{ marginTop: 16 }}>
+                <Skeleton style={{ width: 90, height: 14 }} />
+                <Skeleton style={{ width: 62, height: 26 }} />
+              </div>
+            </div>
+          ))}
         </div>
       </main>
     )

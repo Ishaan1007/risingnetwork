@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
 import Avatar from '../components/Avatar'
-import { ChevronLeftIcon, ChevronRightIcon, LoaderIcon, UserPlusIcon, XIcon } from '../components/Icons'
+import { ChevronLeftIcon, ChevronRightIcon, UserPlusIcon, XIcon } from '../components/Icons'
+import Skeleton from '../components/Skeleton'
 
 type Skill = {
   id: number
@@ -359,10 +360,22 @@ export default function ExploreFreelancers() {
           </button>
 
           {loading ? (
-            <div role="status" aria-label="Loading" className="rn-loading">
-              <span className="spin">
-                <LoaderIcon size={20} />
-              </span>
+            <div role="status" aria-label="Loading people" aria-busy="true" className="rn-cards">
+              {Array.from({ length: 6 }).map((_, idx) => (
+                <article key={idx} className="rn-card">
+                  <div className="rn-card-head">
+                    <Skeleton className="rn-skeleton-circle" style={{ width: 56, height: 56 }} />
+                    <div className="rn-skeleton-stack" style={{ flex: 1 }}>
+                      <Skeleton style={{ width: '58%', height: 18 }} />
+                      <Skeleton style={{ width: '74%', height: 14 }} />
+                    </div>
+                  </div>
+                  <div className="rn-card-actions rn-card-actions-split">
+                    <Skeleton style={{ width: 118, height: 36 }} />
+                    <Skeleton style={{ width: 102, height: 36 }} />
+                  </div>
+                </article>
+              ))}
             </div>
           ) : freelancers.length === 0 ? (
             <div className="rn-empty">No professionals match your filters yet.</div>

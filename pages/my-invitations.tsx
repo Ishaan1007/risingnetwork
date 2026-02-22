@@ -3,6 +3,7 @@ import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
 import { getSocket } from '../lib/socketClient'
 import { CheckIcon, LoaderIcon, SearchIcon, UsersIcon, XIcon } from '../components/Icons'
+import Skeleton from '../components/Skeleton'
 
 type Invitation = {
   id: number
@@ -128,11 +129,28 @@ export default function MyInvitations() {
 
   if (loading) {
     return (
-      <main style={{ padding: 24 }}>
-        <div style={{ maxWidth: 700, margin: '40px auto' }} className="card">
-          <div role="status" aria-label="Checking invitations" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-            <span className="spin"><LoaderIcon size={20} /></span>
-          </div>
+      <main style={{ padding: 24, maxWidth: 800, margin: '0 auto' }} aria-busy="true" aria-live="polite">
+        <Skeleton style={{ width: 190, height: 34, marginBottom: 24 }} />
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {[0, 1, 2].map((idx) => (
+            <div
+              key={idx}
+              style={{
+                border: '1px solid #d1d5db',
+                borderRadius: 8,
+                padding: 16,
+                backgroundColor: '#f9fafb',
+              }}
+            >
+              <Skeleton style={{ width: '46%', height: 20, marginBottom: 8 }} />
+              <Skeleton style={{ width: '34%', height: 14, marginBottom: 10 }} />
+              <Skeleton style={{ width: '100%', height: 14, marginBottom: 14 }} />
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Skeleton style={{ width: 70, height: 34 }} />
+                <Skeleton style={{ width: 70, height: 34 }} />
+              </div>
+            </div>
+          ))}
         </div>
       </main>
     )
@@ -230,7 +248,6 @@ export default function MyInvitations() {
           ))}
         </div>
       )}
-
     </main>
   )
 }

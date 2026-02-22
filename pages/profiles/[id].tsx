@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../../lib/supabaseClient'
 import Avatar from '../../components/Avatar'
-import { LoaderIcon } from '../../components/Icons'
+import Skeleton from '../../components/Skeleton'
 
 type Skill = {
   id: number
@@ -188,12 +188,37 @@ export default function PublicProfile() {
 
   if (loading) {
     return (
-      <main className="rn-shell">
-        <div role="status" aria-label="Loading profile" className="rn-loading">
-          <span className="spin">
-            <LoaderIcon size={20} />
-          </span>
-        </div>
+      <main className="rn-profile-view" aria-busy="true" aria-live="polite">
+        <section className="rn-profile-hero">
+          <Skeleton style={{ height: 150, borderRadius: 20 }} />
+          <div className="rn-profile-card rn-profile-main">
+            <div className="rn-profile-header">
+              <Skeleton className="rn-skeleton-circle" style={{ width: 96, height: 96 }} />
+              <div className="rn-skeleton-stack" style={{ flex: 1 }}>
+                <Skeleton style={{ width: '38%', height: 30 }} />
+                <Skeleton style={{ width: '52%', height: 16 }} />
+                <div className="rn-skeleton-row">
+                  <Skeleton style={{ width: 110, height: 36 }} />
+                  <Skeleton style={{ width: 110, height: 36 }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="rn-profile-card rn-profile-section">
+          <Skeleton style={{ width: 88, height: 22, marginBottom: 14 }} />
+          <Skeleton style={{ width: '100%', height: 14 }} />
+          <Skeleton style={{ width: '92%', height: 14 }} />
+          <Skeleton style={{ width: '78%', height: 14 }} />
+        </section>
+        <section className="rn-profile-card rn-profile-section">
+          <Skeleton style={{ width: 68, height: 22, marginBottom: 14 }} />
+          <div className="rn-tags rn-tags-lg">
+            {[0, 1, 2, 3].map((chip) => (
+              <Skeleton key={chip} style={{ width: 92, height: 32, borderRadius: 999 }} />
+            ))}
+          </div>
+        </section>
       </main>
     )
   }

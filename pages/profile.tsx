@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabaseClient'
 import imageCompression from 'browser-image-compression'
 import { LoaderIcon } from '../components/Icons'
 import Avatar from '../components/Avatar'
+import Skeleton from '../components/Skeleton'
 import { syncProfilePicture } from '../lib/gravatar'
 import { subscribeToNotifications } from '../lib/onesignalClient'
 
@@ -493,11 +494,46 @@ export default function Profile() {
 
   if (loading) {
     return (
-      <main className="rn-shell">
-        <div role="status" aria-label="Loading profile" className="rn-loading">
-          <span className="spin">
-            <LoaderIcon size={20} />
-          </span>
+      <main className="rn-profile-shell" aria-busy="true" aria-live="polite">
+        <div className="rn-profile-card">
+          <div className="rn-profile-edit-header">
+            <Skeleton style={{ width: 180, height: 32 }} />
+            <Skeleton style={{ width: 88, height: 36 }} />
+          </div>
+          <div className="rn-profile-row">
+            <Skeleton className="rn-skeleton-circle" style={{ width: 84, height: 84 }} />
+            <div className="rn-skeleton-stack" style={{ width: '100%', maxWidth: 440 }}>
+              <Skeleton style={{ width: 130, height: 18 }} />
+              <Skeleton style={{ width: '55%', height: 14 }} />
+              <Skeleton style={{ width: 270, height: 36 }} />
+            </div>
+          </div>
+          <div className="rn-form">
+            <div className="rn-form-field">
+              <Skeleton style={{ width: 120, height: 14 }} />
+              <Skeleton style={{ width: '100%', height: 44 }} />
+            </div>
+            <div className="rn-form-field">
+              <Skeleton style={{ width: 120, height: 14 }} />
+              <Skeleton style={{ width: '100%', height: 44 }} />
+            </div>
+            <div className="rn-form-field">
+              <Skeleton style={{ width: 120, height: 14 }} />
+              <Skeleton style={{ width: '100%', height: 44 }} />
+            </div>
+            <div className="rn-form-field full">
+              <Skeleton style={{ width: 120, height: 14 }} />
+              <Skeleton style={{ width: '100%', height: 120 }} />
+            </div>
+            <div className="rn-form-field full">
+              <Skeleton style={{ width: 120, height: 14 }} />
+              <Skeleton style={{ width: '100%', height: 44 }} />
+            </div>
+            <div className="rn-actions">
+              <Skeleton style={{ width: 96, height: 40 }} />
+              <Skeleton style={{ width: 96, height: 40 }} />
+            </div>
+          </div>
         </div>
       </main>
     )

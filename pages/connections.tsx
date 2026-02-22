@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
 import Avatar from '../components/Avatar'
-import { LoaderIcon } from '../components/Icons'
+import Skeleton from '../components/Skeleton'
 
 type Connection = {
   id: string
@@ -151,12 +151,36 @@ export default function Connections() {
 
   if (loading) {
     return (
-      <main className="rn-shell">
-        <div role="status" aria-label="Loading" className="rn-loading">
-          <span className="spin">
-            <LoaderIcon size={20} />
-          </span>
+      <main className="rn-shell rn-connections-shell" aria-busy="true" aria-live="polite">
+        <div className="rn-results-header rn-connections-header">
+          <div className="rn-skeleton-stack" style={{ width: 280 }}>
+            <Skeleton style={{ height: 32, width: '70%' }} />
+            <Skeleton style={{ height: 16, width: '100%' }} />
+          </div>
         </div>
+
+        {[0, 1, 2].map((section) => (
+          <section key={section} className="rn-profile-card">
+            <Skeleton style={{ height: 24, width: 190, marginBottom: 16 }} />
+            <div className="rn-connection-grid">
+              {[0, 1].map((card) => (
+                <div key={card} className="rn-connection-card">
+                  <div className="rn-connection-head">
+                    <Skeleton className="rn-skeleton-circle" style={{ width: 56, height: 56 }} />
+                    <div className="rn-skeleton-stack" style={{ flex: 1 }}>
+                      <Skeleton style={{ height: 16, width: '45%' }} />
+                      <Skeleton style={{ height: 13, width: '65%' }} />
+                    </div>
+                  </div>
+                  <div className="rn-skeleton-row">
+                    <Skeleton style={{ height: 34, width: 90 }} />
+                    <Skeleton style={{ height: 34, width: 90 }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
       </main>
     )
   }

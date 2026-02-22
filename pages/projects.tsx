@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
 import Avatar from '../components/Avatar'
-import { LoaderIcon } from '../components/Icons'
+import Skeleton from '../components/Skeleton'
 
 type Project = {
   id: string
@@ -241,10 +241,22 @@ export default function ProjectsPage() {
       )}
 
       {loading ? (
-        <div role="status" aria-label="Loading" className="rn-loading">
-          <span className="spin">
-            <LoaderIcon size={20} />
-          </span>
+        <div role="status" aria-label="Loading projects" aria-busy="true" className="rn-projects-grid">
+          {[0, 1, 2].map((idx) => (
+            <article key={idx} className="rn-project-card">
+              <Skeleton style={{ width: '60%', height: 20 }} />
+              <Skeleton style={{ width: '100%', height: 14 }} />
+              <Skeleton style={{ width: '88%', height: 14 }} />
+              <div className="rn-tags rn-tags-lg">
+                <Skeleton style={{ width: 90, height: 30, borderRadius: 999 }} />
+                <Skeleton style={{ width: 78, height: 30, borderRadius: 999 }} />
+                <Skeleton style={{ width: 102, height: 30, borderRadius: 999 }} />
+              </div>
+              <div className="rn-project-actions">
+                <Skeleton style={{ width: 120, height: 36 }} />
+              </div>
+            </article>
+          ))}
         </div>
       ) : projects.length === 0 ? (
         <div className="rn-empty">No projects available yet.</div>

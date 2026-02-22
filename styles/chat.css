@@ -24,6 +24,44 @@
   animation: spin 1s linear infinite;
 }
 
+.rn-chat-skeleton {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.rn-chat-skeleton-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--rn-line);
+}
+
+.rn-chat-skeleton-body {
+  flex: 1;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rn-chat-skeleton-message {
+  display: flex;
+  gap: 12px;
+  max-width: 82%;
+}
+
+.rn-chat-skeleton-message.own {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.rn-chat-skeleton-input {
+  border-top: 1px solid var(--rn-line);
+  padding: 14px 20px;
+}
+
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
