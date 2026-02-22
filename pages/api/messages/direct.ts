@@ -1,5 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { getSupabaseAdmin, getUserFromRequest } from '../../../lib/serverSupabase'
+import { sendDirectMessageNotification } from '../../../lib/onesignalServer'
 
 function normalizePair(a: string, b: string): [string, string] {
   return a < b ? [a, b] : [b, a]
@@ -139,7 +140,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       const { data: otherUser, error: otherUserError } = await supabaseAdmin
         .from('profiles')
-        .select('id')
+        .select('id, name, onesignal_player_id, notifications_enabled')
         .eq('id', cleanOtherUserId)
         .single()
 
@@ -162,6 +163,30 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       if (insertError) {
         return res.status(500).json({ error: insertError.message })
+      }
+
+      try {
+        const senderName =
+          user.user_metadata?.name ||
+          [user.user_metadata?.given_name, user.user_metadata?.family_name].filter(Boolean).join(' ') ||
+          'Someone'
+
+        const recipient = otherUser as {
+          onesignal_player_id?: string | null
+          notifications_enabled?: boolean | null
+        } | null
+
+        if (recipient?.notifications_enabled && recipient.onesignal_player_id) {
+          await sendDirectMessageNotification(
+            recipient.onesignal_player_id,
+            senderName,
+            user.id,
+            cleanContent
+          )
+        }
+      } catch (notifyError) {
+        // Notification failure should not block message delivery.
+        console.error('direct message notification failed:', notifyError)
       }
 
       return res.status(201).json({

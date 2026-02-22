@@ -21,7 +21,7 @@ export async function initializeOneSignal(appId: string, safariWebId?: string) {
       },
       promptOptions: {
         actionMessage:
-          'RisingNetwork wants to show notifications for team invitations, meeting reminders, and connection requests.',
+          'RisingNetwork wants to show notifications for messages, team invitations, meeting reminders, and connection requests.',
         acceptButtonText: 'Allow',
         cancelButtonText: "Don't Allow",
       },

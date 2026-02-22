@@ -47,6 +47,7 @@ export type NotificationType =
   | 'meeting_update'
   | 'connection_accepted'
   | 'connection_declined'
+  | 'direct_message'
 
 export interface NotificationData {
   type: NotificationType
@@ -157,6 +158,26 @@ export async function sendFriendRequestDeclined(
       userId: friendId,
       url: '/connections',
       action: 'view_connections',
+    }
+  )
+}
+
+export async function sendDirectMessageNotification(
+  playerId: string,
+  senderName: string,
+  senderId: string,
+  messagePreview: string
+) {
+  const preview = messagePreview.length > 100 ? `${messagePreview.slice(0, 100)}...` : messagePreview
+  return sendNotificationToPlayer(
+    playerId,
+    `New message from ${senderName}`,
+    preview,
+    {
+      type: 'direct_message',
+      userId: senderId,
+      url: `/messages/${senderId}`,
+      action: 'open_direct_message',
     }
   )
 }
