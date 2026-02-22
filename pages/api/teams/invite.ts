@@ -22,9 +22,13 @@ export default async function handler(
       return res.status(400).json({ error: 'team_id and user_id required' })
     }
 
+    const supabaseAdmin = getSupabaseAdmin()
     const token = req.headers.authorization?.slice(7) || ''
     const supabaseUser = getSupabaseUserClient(token)
-    const supabaseAdmin = getSupabaseAdmin()
+
+    if (user_id === user.id) {
+      return res.status(400).json({ error: 'You are already in your own team' })
+    }
 
     const { data: team, error: teamError } = await supabaseUser
       .from('teams')
@@ -41,7 +45,7 @@ export default async function handler(
     }
 
     // Check if already invited/member
-    const { data: existing } = await supabaseUser
+    const { data: existing } = await (supabaseAdmin as any)
       .from('team_members')
       .select('id, status')
       .eq('team_id', team_id)
@@ -49,18 +53,20 @@ export default async function handler(
       .single()
 
     if (existing) {
+      const existingRow = existing as { status?: string } | null
       return res.status(400).json({
-        error: `User is already ${existing.status} for this team`,
+        error: `User is already ${existingRow?.status || 'added'} for this team`,
       })
     }
 
     // Create invitation
-    const { data: invitation, error } = await supabaseUser
+    const { data: invitation, error } = await (supabaseAdmin as any)
       .from('team_members')
       .insert({
         team_id,
         user_id,
         status: 'pending',
+        invited_by: user.id,
       })
       .select()
       .single()

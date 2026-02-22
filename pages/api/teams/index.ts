@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from 'next'
-import { getSupabaseUserClient, getUserFromRequest } from '../../../lib/serverSupabase'
+import { getSupabaseAdmin, getSupabaseUserClient, getUserFromRequest } from '../../../lib/serverSupabase'
 
 export default async function handler(
   req: NextApiRequest,
@@ -72,6 +72,7 @@ export default async function handler(
 
       const token = req.headers.authorization?.slice(7) || ''
       const supabaseUser = getSupabaseUserClient(token)
+      const supabaseAdmin = getSupabaseAdmin()
       const { data: team, error: teamError } = await supabaseUser
         .from('teams')
         .insert({
@@ -88,13 +89,14 @@ export default async function handler(
       }
 
       // Add creator as accepted member
-      const { error: memberError } = await supabaseUser
+      const { error: memberError } = await (supabaseAdmin as any)
         .from('team_members')
-        .insert({
+        .upsert({
           team_id: team.id,
           user_id: user.id,
           status: 'accepted',
-        })
+          invited_by: user.id,
+        }, { onConflict: 'team_id,user_id' })
 
       if (memberError) {
         return res.status(500).json({ error: memberError.message })

@@ -114,37 +114,36 @@ export default function TeamDetailPage() {
           setMembers(membersData || [])
           
           // Check if current user is a member
-          const isUserMember = membersData?.some(m => m.user_id === session.user.id)
+          const isUserMember =
+            teamData?.created_by === session.user.id ||
+            membersData?.some(m => m.user_id === session.user.id)
           setIsMember(isUserMember)
         }
 
-        // Team creator can invite connected users who are not already accepted members
+        // Team creator can invite anyone who is not already on the team list.
         if (teamData?.created_by === session.user.id) {
-          const { data: connectionRows } = await supabase
-            .from('connections')
-            .select('requester_id, recipient_id, status')
-            .eq('status', 'accepted')
-            .or(`requester_id.eq.${session.user.id},recipient_id.eq.${session.user.id}`)
+          const { data: allTeamMemberRows } = await supabase
+            .from('team_members')
+            .select('user_id')
+            .eq('team_id', teamId)
 
-          const acceptedMemberIds = new Set((membersData || []).map((m: any) => m.user_id))
-          const candidateIds = Array.from(
-            new Set(
-              (connectionRows || [])
-                .map((c: any) => (c.requester_id === session.user.id ? c.recipient_id : c.requester_id))
-                .filter((id: string) => id && !acceptedMemberIds.has(id))
-            )
-          )
+          const excludedIds = new Set<string>([
+            session.user.id,
+            ...(allTeamMemberRows || []).map((row: any) => row.user_id).filter(Boolean),
+          ])
 
-          if (candidateIds.length > 0) {
-            const { data: candidateProfiles } = await supabase
-              .from('profiles')
-              .select('id, name, avatar_url, email')
-              .in('id', candidateIds)
+          let candidatesQuery = supabase
+            .from('profiles')
+            .select('id, name, avatar_url, email')
+            .order('name', { ascending: true })
+            .limit(60)
 
-            setInviteCandidates((candidateProfiles || []) as InviteCandidate[])
-          } else {
-            setInviteCandidates([])
+          if (excludedIds.size > 0) {
+            candidatesQuery = candidatesQuery.not('id', 'in', `(${Array.from(excludedIds).join(',')})`)
           }
+
+          const { data: candidateProfiles } = await candidatesQuery
+          setInviteCandidates((candidateProfiles || []) as InviteCandidate[])
         }
 
         // Fetch meetings
@@ -444,7 +443,7 @@ export default function TeamDetailPage() {
                     <div style={{ marginTop: 16 }}>
                       <h4>Invite Members</h4>
                       {inviteCandidates.length === 0 ? (
-                        <p className="rn-muted">No connected users available to invite.</p>
+                        <p className="rn-muted">No users available to invite.</p>
                       ) : (
                         <div className="rn-friends-grid">
                           {inviteCandidates.map((candidate) => (
