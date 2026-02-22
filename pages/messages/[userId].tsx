@@ -23,6 +23,7 @@ type OtherUser = {
 export default function DirectMessagePage() {
   const router = useRouter()
   const { userId } = router.query
+  const targetUserId = Array.isArray(userId) ? userId[0] : userId
   const [session, setSession] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
@@ -67,13 +68,13 @@ export default function DirectMessagePage() {
   }, [router])
 
   useEffect(() => {
-    if (!session?.access_token || !userId) return
+    if (!session?.access_token || !targetUserId) return
     let mounted = true
     setLoading(true)
     setError(null)
 
-    const targetUserId = String(userId)
-    if (targetUserId === session.user.id) {
+    const cleanTargetUserId = String(targetUserId)
+    if (cleanTargetUserId === session.user.id) {
       setError('You cannot open a direct chat with yourself.')
       setLoading(false)
       return
@@ -81,7 +82,7 @@ export default function DirectMessagePage() {
 
     const fetchNow = async () => {
       try {
-        await loadMessages(session.access_token, targetUserId)
+        await loadMessages(session.access_token, cleanTargetUserId)
         if (mounted) setLoading(false)
       } catch (err: any) {
         if (mounted) {
@@ -98,7 +99,7 @@ export default function DirectMessagePage() {
       mounted = false
       clearInterval(interval)
     }
-  }, [session, userId])
+  }, [session, targetUserId])
 
   useEffect(() => {
     if (!scrollerRef.current) return
@@ -107,7 +108,7 @@ export default function DirectMessagePage() {
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!session?.access_token || !userId) return
+    if (!session?.access_token || !targetUserId) return
     const clean = text.trim()
     if (!clean) return
 
@@ -121,7 +122,7 @@ export default function DirectMessagePage() {
           Authorization: `Bearer ${session.access_token}`,
         },
         body: JSON.stringify({
-          user_id: String(userId),
+          user_id: String(targetUserId),
           content: clean,
         }),
       })
@@ -131,7 +132,7 @@ export default function DirectMessagePage() {
       }
 
       setText('')
-      await loadMessages(session.access_token, String(userId))
+      await loadMessages(session.access_token, String(targetUserId))
     } catch (err: any) {
       setError(err.message || 'Failed to send message')
     } finally {

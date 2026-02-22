@@ -74,15 +74,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(400).json({ error: 'Cannot message yourself' })
       }
 
-      const { data: otherUser, error: otherUserError } = await supabaseAdmin
+      const { data: otherUser } = await supabaseAdmin
         .from('profiles')
         .select('id, name, avatar_url, city')
         .eq('id', otherUserId)
-        .single()
-
-      if (otherUserError || !otherUser) {
-        return res.status(404).json({ error: 'User not found' })
-      }
+        .maybeSingle()
 
       const conversationId = await getOrCreateDirectConversation(supabaseAdmin, user.id, otherUserId)
 
@@ -118,7 +114,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
       return res.status(200).json({
         conversation_id: conversationId,
-        other_user: otherUser,
+        other_user:
+          otherUser || {
+            id: otherUserId,
+            name: 'User',
+            avatar_url: null,
+            city: null,
+          },
         messages,
       })
     }
@@ -136,16 +138,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
       if (cleanContent.length > 2000) {
         return res.status(400).json({ error: 'Message is too long' })
-      }
-
-      const { data: otherUser, error: otherUserError } = await supabaseAdmin
-        .from('profiles')
-        .select('id, name, onesignal_player_id, notifications_enabled')
-        .eq('id', cleanOtherUserId)
-        .single()
-
-      if (otherUserError || !otherUser) {
-        return res.status(404).json({ error: 'User not found' })
       }
 
       const conversationId = await getOrCreateDirectConversation(supabaseAdmin, user.id, cleanOtherUserId)
@@ -166,12 +158,18 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       }
 
       try {
+        const { data: recipientProfile } = await supabaseAdmin
+          .from('profiles')
+          .select('id, onesignal_player_id, notifications_enabled')
+          .eq('id', cleanOtherUserId)
+          .maybeSingle()
+
         const senderName =
           user.user_metadata?.name ||
           [user.user_metadata?.given_name, user.user_metadata?.family_name].filter(Boolean).join(' ') ||
           'Someone'
 
-        const recipient = otherUser as {
+        const recipient = recipientProfile as {
           onesignal_player_id?: string | null
           notifications_enabled?: boolean | null
         } | null

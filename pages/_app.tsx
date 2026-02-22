@@ -10,6 +10,16 @@ function App({ Component, pageProps }: AppProps) {
   useEffect(() => {
     // Initialize OneSignal when app loads
     const initOneSignal = async () => {
+      if (typeof window !== 'undefined') {
+        const host = window.location.hostname.toLowerCase()
+        const isAllowedHost =
+          host === 'risingnetwork.in' ||
+          host === 'www.risingnetwork.in' ||
+          host === 'localhost' ||
+          host === '127.0.0.1'
+        if (!isAllowedHost) return
+      }
+
       // Use your actual OneSignal App ID here
       const appId = process.env.NEXT_PUBLIC_ONESIGNAL_APP_ID || 'your-onesignal-app-id'
       const safariWebId = process.env.NEXT_PUBLIC_ONESIGNAL_SAFARI_WEB_ID
