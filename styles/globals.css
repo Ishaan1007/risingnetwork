@@ -1327,6 +1327,27 @@ pre {
   flex-direction: column;
 }
 
+.rn-messages-search-wrap {
+  padding: 0 18px 2px;
+}
+
+.rn-messages-search {
+  width: 100%;
+  border: 1px solid var(--rn-line);
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  color: #111827;
+}
+
+.rn-messages-search:focus {
+  outline: none;
+  border-color: #b7cdfc;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+  background: #ffffff;
+}
+
 .rn-msg-item {
   width: 100%;
   padding: 13px 18px;
@@ -1397,16 +1418,9 @@ pre {
   flex-shrink: 0;
 }
 
-.rn-msg-meta {
-  display: block;
-  margin-top: 1px;
-  font-size: 12px;
-  color: #6b7280;
-}
-
 .rn-msg-preview {
   margin-top: 4px;
-  color: #374151;
+  color: #9ca3af;
   font-size: 13px;
   white-space: nowrap;
   overflow: hidden;
@@ -1549,13 +1563,6 @@ pre {
   font-size: 10px;
   margin-right: 6px;
   color: #3b82f6;
-}
-
-.rn-msg-chevron {
-  color: #94a3b8;
-  font-size: 15px;
-  line-height: 1;
-  flex-shrink: 0;
 }
 
 .rn-msg-request-item {
@@ -2551,6 +2558,9 @@ pre {
   }
   .rn-messages-panel > h2 {
     padding: 0 14px 10px;
+  }
+  .rn-messages-search-wrap {
+    padding: 0 14px 2px;
   }
   .rn-msg-item {
     padding: 12px 14px;

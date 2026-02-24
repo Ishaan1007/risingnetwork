@@ -34,6 +34,7 @@ export default function MessagesHome() {
   const [profiles, setProfiles] = useState<Record<string, Profile>>({})
   const [lastMessageByUser, setLastMessageByUser] = useState<Record<string, LastMessageSummary>>({})
   const [updatingRequestId, setUpdatingRequestId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -171,14 +172,11 @@ export default function MessagesHome() {
   const incomingCards = useMemo(() => {
     return incoming.map((c) => {
       const profile = profiles[c.requester_id]
-      const role = profile?.role ? `${profile.role.charAt(0).toUpperCase()}${profile.role.slice(1)}` : 'Professional'
-      const meta = [role, profile?.city].filter(Boolean).join(' | ')
       return {
         id: c.id,
         requesterId: c.requester_id,
         name: profile?.name || 'Unknown user',
         avatar: profile?.avatar_url,
-        meta,
       }
     })
   }, [incoming, profiles])
@@ -187,8 +185,6 @@ export default function MessagesHome() {
     const cards = accepted.map((c) => {
       const otherId = c.requester_id === session?.user?.id ? c.recipient_id : c.requester_id
       const profile = profiles[otherId]
-      const role = profile?.role ? `${profile.role.charAt(0).toUpperCase()}${profile.role.slice(1)}` : 'Professional'
-      const meta = [role, profile?.city].filter(Boolean).join(' | ')
       const lastMessage = lastMessageByUser[otherId] || {
         createdAt: null,
         content: null,
@@ -199,7 +195,6 @@ export default function MessagesHome() {
         otherId,
         name: profile?.name || 'Unknown user',
         avatar: profile?.avatar_url,
-        meta,
         hasMessages: Boolean(lastMessage.createdAt),
         lastMessage,
       }
@@ -265,6 +260,12 @@ export default function MessagesHome() {
     return messageDate.toLocaleDateString([], { month: 'short', day: 'numeric' })
   }
 
+  const normalizedQuery = searchQuery.trim().toLowerCase()
+  const filteredIncomingCards = incomingCards.filter((card) =>
+    card.name.toLowerCase().includes(normalizedQuery)
+  )
+  const filteredChatCards = chatCards.filter((card) => card.name.toLowerCase().includes(normalizedQuery))
+
   if (loading) {
     return (
       <main className="rn-shell rn-connections-shell rn-messages-shell" aria-busy="true" aria-live="polite">
@@ -305,12 +306,24 @@ export default function MessagesHome() {
       {error && <div className="rn-message error">{error}</div>}
 
       <section className="rn-profile-card rn-messages-panel">
+        <div className="rn-messages-search-wrap">
+          <input
+            type="search"
+            className="rn-messages-search"
+            placeholder="Search chats or requests"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+      </section>
+
+      <section className="rn-profile-card rn-messages-panel">
         <h2>Requests</h2>
-        {incomingCards.length === 0 ? (
-          <p className="rn-muted">No incoming requests.</p>
+        {filteredIncomingCards.length === 0 ? (
+          <p className="rn-muted">{normalizedQuery ? 'No matching requests.' : 'No incoming requests.'}</p>
         ) : (
           <div className="rn-messages-list">
-            {incomingCards.map((card) => (
+            {filteredIncomingCards.map((card) => (
               <div key={card.id} className="rn-msg-item rn-msg-request-item">
                 <div className="rn-msg-head">
                   <Avatar src={card.avatar} size={56} />
@@ -318,7 +331,6 @@ export default function MessagesHome() {
                     <div className="rn-msg-topline">
                       <strong>{card.name}</strong>
                     </div>
-                    <span className="rn-muted">{card.meta || 'Connection request'}</span>
                   </div>
                 </div>
                 <div className="rn-connection-actions rn-msg-request-actions">
@@ -347,11 +359,15 @@ export default function MessagesHome() {
 
       <section className="rn-profile-card rn-messages-panel">
         <h2>Your Chats</h2>
-        {chatCards.length === 0 ? (
-          <p className="rn-muted">No accepted connections yet. Accept requests in Connections to start messaging.</p>
+        {filteredChatCards.length === 0 ? (
+          <p className="rn-muted">
+            {normalizedQuery
+              ? 'No matching chats.'
+              : 'No accepted connections yet. Accept requests in Connections to start messaging.'}
+          </p>
         ) : (
           <div className="rn-messages-list">
-            {chatCards.map((card) => (
+            {filteredChatCards.map((card) => (
               <button
                 key={card.id}
                 type="button"
@@ -365,7 +381,6 @@ export default function MessagesHome() {
                       <strong>{card.name}</strong>
                       <span className="rn-msg-time">{formatMessageTime(card.lastMessage.createdAt)}</span>
                     </div>
-                    <span className="rn-muted rn-msg-meta">{card.meta || 'Connection'}</span>
                     {card.hasMessages ? (
                       <div className="rn-msg-preview">
                         <span className={card.lastMessage.senderId === session?.user?.id ? 'rn-msg-tick' : undefined}>
@@ -380,7 +395,6 @@ export default function MessagesHome() {
                     )}
                   </div>
                 </div>
-                <span className="rn-msg-chevron" aria-hidden="true">{'>'}</span>
               </button>
             ))}
           </div>
