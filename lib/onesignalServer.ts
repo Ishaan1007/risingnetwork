@@ -23,16 +23,27 @@ export async function sendNotificationToPlayer(
       },
       body: JSON.stringify({
         app_id: appId,
+        target_channel: 'push',
         contents: { en: message },
         headings: { en: title },
-        include_player_ids: [playerId],
+        // Web SDK v16 uses push subscription IDs.
+        include_subscription_ids: [playerId],
         data: data || {},
         url: data?.url,
         buttons: data?.buttons || [],
       }),
     })
-
-    return response.ok
+    const result = await response.json().catch(() => null)
+    if (!response.ok) {
+      console.error('OneSignal send failed:', response.status, result)
+      return false
+    }
+    const recipients = typeof result?.recipients === 'number' ? result.recipients : null
+    if (recipients !== null && recipients <= 0) {
+      console.warn('OneSignal accepted request but delivered to 0 recipients:', result)
+      return false
+    }
+    return true
   } catch (error) {
     console.error('Error sending notification:', error)
     return false

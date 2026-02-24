@@ -4,11 +4,11 @@ import { supabase } from '../lib/supabaseClient'
 import {
   LogInIcon,
   LogOutIcon,
+  MessagesIcon,
   ProfileIcon,
   SearchIcon,
   SearchButtonIcon,
   TeamsIcon,
-  UserPlusIcon,
 } from './Icons'
 
 type LayoutProps = {
@@ -134,6 +134,9 @@ export default function Layout({ children }: LayoutProps) {
     if (path === '/explore') {
       return router.pathname === '/explore' || router.pathname === '/'
     }
+    if (path === '/messages') {
+      return router.pathname === '/messages' || router.pathname.startsWith('/messages/')
+    }
     return router.pathname === path
   }
 
@@ -199,12 +202,12 @@ export default function Layout({ children }: LayoutProps) {
           ) : (
             <>
               <button
-                className={`rn-nav-btn ${isActive('/connections') ? 'is-active' : ''}`}
+                className={`rn-nav-btn ${isActive('/messages') ? 'is-active' : ''}`}
                 type="button"
-                onClick={() => router.push('/connections')}
+                onClick={() => router.push('/messages')}
               >
-                <UserPlusIcon size={20} />
-                <span>Connections</span>
+                <MessagesIcon size={20} />
+                <span>Messages</span>
               </button>
               <button
                 className={`rn-nav-btn ${isActive('/teams') ? 'is-active' : ''}`}

@@ -9,6 +9,7 @@ type SignResponse = {
   cloudName: string
   folder: string
   publicId: string
+  uploadPreset?: string
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse<SignResponse | { error: string }>) {
@@ -19,6 +20,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
   const apiKey = process.env.CLOUDINARY_API_KEY
   const apiSecret = process.env.CLOUDINARY_API_SECRET
+  const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
 
   if (!cloudName || !apiKey || !apiSecret) {
     return res.status(500).json({ error: 'Cloudinary env vars are missing' })
@@ -39,7 +41,15 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
   const timestamp = Math.floor(Date.now() / 1000)
   const folder = 'avatars'
 
-  const toSign = `folder=${folder}&public_id=${safePublicId}&timestamp=${timestamp}${apiSecret}`
+  const paramsToSign = [
+    `folder=${folder}`,
+    `public_id=${safePublicId}`,
+    `timestamp=${timestamp}`,
+  ]
+  if (uploadPreset) {
+    paramsToSign.push(`upload_preset=${uploadPreset}`)
+  }
+  const toSign = `${paramsToSign.join('&')}${apiSecret}`
   const signature = crypto.createHash('sha1').update(toSign).digest('hex')
 
   return res.status(200).json({
@@ -49,5 +59,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse<
     cloudName,
     folder,
     publicId: safePublicId,
+    uploadPreset: uploadPreset || undefined,
   })
 }

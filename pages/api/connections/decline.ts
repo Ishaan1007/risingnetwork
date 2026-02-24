@@ -28,9 +28,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // Get both users' profiles
     const { data: requester, error: requesterError } = await supabaseAdmin
       .from('profiles')
-      .select('name, onesignal_player_id')
+      .select('name, onesignal_player_id, notifications_enabled')
       .eq('id', requesterId)
       .single()
+    const requesterProfile = requester as {
+      onesignal_player_id?: string | null
+      name?: string | null
+      notifications_enabled?: boolean | null
+    } | null
 
     const { data: recipient, error: recipientError } = await supabaseAdmin
       .from('profiles')
@@ -39,7 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .single()
     const recipientProfile = recipient as { onesignal_player_id?: string | null; name?: string | null } | null
 
-    if (requesterError || recipientError || !requester || !recipientProfile) {
+    if (requesterError || recipientError || !requesterProfile || !recipientProfile) {
       return res.status(404).json({ error: 'User not found' })
     }
 
@@ -59,25 +64,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to decline connection request' })
     }
 
-    // Send notification to requester
+    // Send notification to requester (best effort)
     try {
-      const notificationResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/notifications/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'connection_declined',
-          recipientId: requesterId,
-          data: {
-            friendName: recipientProfile.name,
-            friendId: recipientId
-          }
-        })
-      })
-
-      if (notificationResponse.ok) {
-        console.log('Connection declined notification sent to requester')
+      if (requesterProfile.notifications_enabled && requesterProfile.onesignal_player_id) {
+        const sent = await sendFriendRequestDeclined(
+          requesterProfile.onesignal_player_id,
+          recipientProfile.name || 'Someone',
+          recipientId
+        )
+        if (sent) {
+          console.log('Connection declined notification sent to requester')
+        } else {
+          console.warn('Connection declined notification was not delivered')
+        }
+      } else {
+        console.log('Requester notifications are disabled or player id is missing')
       }
     } catch (notificationError) {
       console.error('Failed to send notification:', notificationError)

@@ -217,6 +217,16 @@ export function TeamsIcon({ size = 18, color, strokeWidth = 2 }: IconProps) {
   )
 }
 
+export function MessagesIcon({ size = 18, color, strokeWidth = 2 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" style={{ color }} {...base} strokeWidth={strokeWidth}>
+      <path d="M21 11.5a7.5 7.5 0 0 1-7.5 7.5h-4l-3.5 2.5V19A7.5 7.5 0 1 1 21 11.5Z" />
+      <path d="M8 10h8" />
+      <path d="M8 14h5" />
+    </svg>
+  )
+}
+
 export function GoogleMeetIcon({ size = 18, color, strokeWidth = 2 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" style={{ color }} {...base} strokeWidth={strokeWidth}>

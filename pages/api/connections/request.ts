@@ -38,17 +38,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const { data: recipient, error: recipientError } = await supabaseAdmin
       .from('profiles')
-      .select('name, onesignal_player_id')
+      .select('name, onesignal_player_id, notifications_enabled')
       .eq('id', recipientId)
       .single()
-    const recipientProfile = recipient as { onesignal_player_id?: string | null; name?: string | null } | null
+    const recipientProfile = recipient as {
+      onesignal_player_id?: string | null
+      name?: string | null
+      notifications_enabled?: boolean | null
+    } | null
 
     if (requesterError || recipientError || !requesterProfile || !recipientProfile) {
       return res.status(404).json({ error: 'User not found' })
-    }
-
-    if (!recipientProfile.onesignal_player_id) {
-      return res.status(400).json({ error: 'Recipient has not enabled notifications' })
     }
 
     // Check if already connected
@@ -80,25 +80,21 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ error: 'Failed to send connection request' })
     }
 
-    // Send notification to recipient
+    // Send notification to recipient (best effort)
     try {
-      const notificationResponse = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/notifications/send`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: 'connection_request',
-          recipientId,
-          data: {
-            requesterName: requesterProfile.name,
-            requesterId: requesterId
-          }
-        })
-      })
-
-      if (notificationResponse.ok) {
-        console.log('Connection request notification sent successfully')
+      if (recipientProfile.notifications_enabled && recipientProfile.onesignal_player_id) {
+        const sent = await sendConnectionRequest(
+          recipientProfile.onesignal_player_id,
+          requesterProfile.name || 'Someone',
+          requesterId
+        )
+        if (sent) {
+          console.log('Connection request notification sent successfully')
+        } else {
+          console.warn('Connection request notification was not delivered')
+        }
+      } else {
+        console.log('Recipient notifications are disabled or player id is missing')
       }
     } catch (notificationError) {
       console.error('Failed to send notification:', notificationError)

@@ -392,7 +392,7 @@ export default function Profile() {
   }
 
   const handleUpload = async (files: FileList | null) => {
-    if (!files || files.length === 0 || !userId || !accessToken) return
+    if (!files || files.length === 0 || !userId) return
     const file = files[0]
     const maxBytes = 2 * 1024 * 1024
     const allowedTypes = ['image/jpeg', 'image/png', 'image/webp']
@@ -402,11 +402,20 @@ export default function Profile() {
     }
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
     if (!cloudName) {
-      setMessage({ type: 'error', text: 'Cloudinary is not configured.' })
+      setMessage({ type: 'error', text: 'Cloudinary is not configured. Add NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME.' })
       return
     }
     setUploading(true)
     setMessage(null)
+    const {
+      data: { session: latestSession },
+    } = await supabase.auth.getSession()
+    const token = latestSession?.access_token || accessToken
+    if (!token) {
+      setUploading(false)
+      setMessage({ type: 'error', text: 'Session expired. Please log in again and retry upload.' })
+      return
+    }
     let uploadFile = file
     try {
       uploadFile = await imageCompression(file, {
@@ -435,13 +444,16 @@ export default function Profile() {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${accessToken}`,
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ public_id: publicId }),
         })
-        const signData = await signRes.json()
+        const signData = await signRes.json().catch(() => null)
         if (!signRes.ok) {
-          throw new Error(signData?.error || 'Failed to sign upload')
+          throw new Error(signData?.error || `Failed to sign upload (${signRes.status})`)
+        }
+        if (!signData?.signature || !signData?.timestamp || !signData?.apiKey || !signData?.cloudName) {
+          throw new Error('Cloudinary signing response is incomplete.')
         }
 
         const form = new FormData()
@@ -451,17 +463,23 @@ export default function Profile() {
         form.append('signature', signData.signature)
         form.append('folder', signData.folder)
         form.append('public_id', signData.publicId)
+        if (signData.uploadPreset) {
+          form.append('upload_preset', signData.uploadPreset)
+        }
 
         const uploadRes = await fetch(
           `https://api.cloudinary.com/v1_1/${signData.cloudName}/image/upload`,
           { method: 'POST', body: form }
         )
-        const uploadData = await uploadRes.json()
+        const uploadData = await uploadRes.json().catch(() => null)
         if (!uploadRes.ok) {
-          throw new Error(uploadData?.error?.message || 'Upload failed')
+          throw new Error(uploadData?.error?.message || `Upload failed (${uploadRes.status})`)
         }
 
         const publicUrl = uploadData.secure_url || uploadData.url || null
+        if (!publicUrl) {
+          throw new Error('Cloudinary did not return an image URL.')
+        }
 
         // Update profile immediately with avatar_url
         const { error: profileErr } = await supabase
@@ -481,7 +499,7 @@ export default function Profile() {
         setTimeout(() => setMessage(null), 3000)
       } catch (err: any) {
         console.error('upload error', err)
-        setMessage({ type: 'error', text: err.message || 'Upload failed' })
+        setMessage({ type: 'error', text: err?.message || 'Upload failed. Check Cloudinary API key/secret and retry.' })
       }
     }
 

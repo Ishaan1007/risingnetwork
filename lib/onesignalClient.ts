@@ -43,7 +43,8 @@ export async function initializeOneSignal(appId: string, safariWebId?: string) {
 export async function requestNotificationPermission() {
   try {
     const permission = await OneSignal.Notifications.requestPermission()
-    return permission
+    if (typeof permission === 'boolean') return permission
+    return Boolean(OneSignal.Notifications.permission)
   } catch (error) {
     console.error('Error requesting notification permission:', error)
     return false
@@ -53,13 +54,18 @@ export async function requestNotificationPermission() {
 export async function getOneSignalPlayerId(): Promise<string | null> {
   try {
     const anySignal: any = OneSignal as any
-    const subId = anySignal?.User?.PushSubscription?.id
-    if (subId) return subId
-    if (typeof anySignal.getUserId === 'function') {
-      return await anySignal.getUserId()
-    }
-    if (typeof anySignal?.User?.getId === 'function') {
-      return await anySignal.User.getId()
+    for (let attempt = 0; attempt < 8; attempt += 1) {
+      const subId = anySignal?.User?.PushSubscription?.id
+      if (subId) return subId
+      if (typeof anySignal.getUserId === 'function') {
+        const legacyId = await anySignal.getUserId()
+        if (legacyId) return legacyId
+      }
+      if (typeof anySignal?.User?.getId === 'function') {
+        const userId = await anySignal.User.getId()
+        if (userId) return userId
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300))
     }
     return null
   } catch (error) {
@@ -72,6 +78,7 @@ export async function subscribeToNotifications() {
   try {
     const hasPermission = await requestNotificationPermission()
     if (!hasPermission) return false
+    if (!OneSignal.Notifications.permission) return false
 
     const playerId = await getOneSignalPlayerId()
     if (!playerId) return false
