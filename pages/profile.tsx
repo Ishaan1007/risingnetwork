@@ -400,11 +400,6 @@ export default function Profile() {
       setMessage({ type: 'error', text: 'Please upload a JPEG, PNG, or WebP image.' })
       return
     }
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
-    if (!cloudName) {
-      setMessage({ type: 'error', text: 'Cloudinary is not configured. Add NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME.' })
-      return
-    }
     setUploading(true)
     setMessage(null)
     const {

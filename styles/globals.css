@@ -269,6 +269,25 @@ pre {
   justify-content: center;
 }
 
+.material-symbols-outlined.rn-msg-symbol {
+  font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24;
+  font-size: 24px;
+  line-height: 1;
+  color: #64748b;
+}
+
+.rn-nav-btn:hover .rn-msg-symbol {
+  color: #64748b;
+}
+
+.rn-nav-btn.is-active .rn-msg-symbol {
+  color: #2563eb;
+}
+
 .rn-dot {
   position: absolute;
   top: -4px;
@@ -1300,6 +1319,7 @@ pre {
   margin: 0;
   font-size: 16px;
   letter-spacing: 0.2px;
+  font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif;
 }
 
 .rn-messages-list {
@@ -1368,6 +1388,7 @@ pre {
   overflow: hidden;
   text-overflow: ellipsis;
   color: #111827;
+  font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif;
 }
 
 .rn-msg-time {
@@ -1423,6 +1444,7 @@ pre {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-family: 'Plus Jakarta Sans', 'Manrope', sans-serif;
 }
 
 .rn-wa-meta {

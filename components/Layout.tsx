@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabaseClient'
 import {
   LogInIcon,
   LogOutIcon,
-  MessagesIcon,
   ProfileIcon,
   SearchIcon,
   SearchButtonIcon,
@@ -206,7 +205,9 @@ export default function Layout({ children }: LayoutProps) {
                 type="button"
                 onClick={() => router.push('/messages')}
               >
-                <MessagesIcon size={20} />
+                <span className="material-symbols-outlined rn-msg-symbol" aria-hidden="true">
+                  3p
+                </span>
                 <span>Messages</span>
               </button>
               <button
