@@ -416,7 +416,11 @@ export default function ExploreFreelancers() {
                           You
                         </button>
                       ) : connectedIds.has(freelancer.id) ? (
-                        <button className="rn-secondary-btn" type="button" disabled>
+                        <button
+                          className="rn-secondary-btn"
+                          type="button"
+                          onClick={() => router.push(`/profiles/${freelancer.id}`)}
+                        >
                           Connected
                         </button>
                       ) : (

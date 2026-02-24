@@ -254,7 +254,20 @@ export default function Connections() {
         ) : (
           <div className="rn-connection-grid">
             {acceptedCards.map((c) => (
-              <div key={c.id} className="rn-connection-card">
+              <div
+                key={c.id}
+                className="rn-connection-card"
+                role="button"
+                tabIndex={0}
+                style={{ cursor: 'pointer' }}
+                onClick={() => router.push(`/profiles/${c.otherId}`)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    router.push(`/profiles/${c.otherId}`)
+                  }
+                }}
+              >
                 <div className="rn-connection-head">
                   <Avatar src={profiles[c.otherId]?.avatar_url} size={56} />
                   <div>
