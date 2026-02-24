@@ -33,8 +33,8 @@ export default function DirectMessagePage() {
   const [text, setText] = useState('')
   const scrollerRef = useRef<HTMLDivElement | null>(null)
 
-  const loadMessages = async (token: string, targetUserId: string) => {
-    const response = await fetch(`/api/messages/direct?user_id=${encodeURIComponent(targetUserId)}`, {
+  const loadMessages = async (token: string, target: string) => {
+    const response = await fetch(`/api/messages/direct?user_id=${encodeURIComponent(target)}`, {
       headers: { Authorization: `Bearer ${token}` },
     })
     const result = await response.json()
@@ -93,7 +93,6 @@ export default function DirectMessagePage() {
     }
 
     fetchNow()
-
     const interval = setInterval(fetchNow, 4000)
     return () => {
       mounted = false
@@ -172,88 +171,54 @@ export default function DirectMessagePage() {
   }
 
   return (
-    <main className="rn-profile-view">
-      <section className="rn-profile-card">
-        <div className="rn-profile-header" style={{ marginBottom: 14 }}>
-          <Avatar src={otherUser?.avatar_url || undefined} alt={title} size={54} />
-          <div className="rn-profile-headtext">
-            <h1 style={{ fontSize: 20 }}>{title}</h1>
-            <div className="rn-profile-meta">
+    <main className="rn-profile-view rn-wa-shell">
+      <section className="rn-profile-card rn-wa-chat-card">
+        <div className="rn-wa-header">
+          <Avatar src={otherUser?.avatar_url || undefined} alt={title} size={50} />
+          <div className="rn-wa-headtext">
+            <h1>{title}</h1>
+            <div className="rn-wa-meta">
               <span>{otherUser?.city || 'Direct chat'}</span>
             </div>
           </div>
           <button
             type="button"
-            className="rn-secondary-btn"
+            className="rn-secondary-btn rn-wa-profile-btn"
             onClick={() => router.push(otherUser ? `/profiles/${otherUser.id}` : '/explore')}
           >
-            View Profile
+            View
           </button>
         </div>
 
-        {error && (
-          <div className="rn-message error" style={{ marginBottom: 12 }}>
-            {error}
-          </div>
-        )}
+        {error && <div className="rn-message error rn-wa-error">{error}</div>}
 
-        <div
-          ref={scrollerRef}
-          style={{
-            maxHeight: 460,
-            overflowY: 'auto',
-            border: '1px solid var(--rn-line)',
-            borderRadius: 12,
-            padding: 12,
-            background: '#f8fafc',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-          }}
-        >
+        <div ref={scrollerRef} className="rn-wa-scroll">
           {messages.length === 0 ? (
-            <p className="rn-muted">No messages yet. Start the conversation.</p>
+            <p className="rn-muted rn-wa-empty">No messages yet. Start the conversation.</p>
           ) : (
             messages.map((message) => {
               const own = message.sender_id === session?.user?.id
               return (
-                <div
-                  key={message.id}
-                  style={{
-                    alignSelf: own ? 'flex-end' : 'flex-start',
-                    maxWidth: '82%',
-                    background: own ? 'var(--rn-blue)' : '#ffffff',
-                    color: own ? '#ffffff' : 'var(--rn-ink)',
-                    border: own ? '1px solid var(--rn-blue)' : '1px solid var(--rn-line)',
-                    borderRadius: 12,
-                    padding: '10px 12px',
-                  }}
-                >
-                  <div style={{ fontSize: 11, opacity: own ? 0.9 : 0.65, marginBottom: 3 }}>
-                    {own ? 'You' : message.sender_name} • {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <div key={message.id} className={`rn-wa-bubble ${own ? 'is-own' : ''}`}>
+                  <div className="rn-wa-bubble-text">{message.content}</div>
+                  <div className="rn-wa-bubble-meta">
+                    {own ? 'You' : message.sender_name} | {new Date(message.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
-                  <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{message.content}</div>
                 </div>
               )
             })
           )}
         </div>
 
-        <form onSubmit={handleSend} style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+        <form onSubmit={handleSend} className="rn-wa-composer">
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="Type a message..."
+            placeholder="Type a message"
             maxLength={2000}
-            style={{
-              flex: 1,
-              border: '1px solid var(--rn-line)',
-              borderRadius: 10,
-              padding: '10px 12px',
-              fontSize: 14,
-            }}
+            className="rn-wa-input"
           />
-          <button type="submit" className="rn-primary-btn" disabled={sending || !text.trim()}>
+          <button type="submit" className="rn-primary-btn rn-wa-send" disabled={sending || !text.trim()}>
             {sending ? 'Sending...' : 'Send'}
           </button>
         </form>

@@ -220,9 +220,10 @@ export function TeamsIcon({ size = 18, color, strokeWidth = 2 }: IconProps) {
 export function MessagesIcon({ size = 18, color, strokeWidth = 2 }: IconProps) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" style={{ color }} {...base} strokeWidth={strokeWidth}>
-      <path d="M21 11.5a7.5 7.5 0 0 1-7.5 7.5h-4l-3.5 2.5V19A7.5 7.5 0 1 1 21 11.5Z" />
-      <path d="M8 10h8" />
-      <path d="M8 14h5" />
+      <path d="M20 11.5a6.5 6.5 0 0 1-6.5 6.5H10l-3 2v-2.8A6.5 6.5 0 1 1 20 11.5Z" />
+      <path d="M9.5 10h7" />
+      <path d="M9.5 13h5.5" />
+      <path d="M9 6.7A5.2 5.2 0 0 0 4 11.9V15l-2 1.5 2-.2v.9" />
     </svg>
   )
 }
