@@ -40,14 +40,15 @@ export default async function handler(
           .eq('status', 'accepted')
 
         ;(memberRows || []).forEach((row: any) => {
-          memberCounts.set(row.team_id, (memberCounts.get(row.team_id) || 0) + 1)
+          const key = String(row.team_id)
+          memberCounts.set(key, (memberCounts.get(key) || 0) + 1)
         })
       }
 
       const transformed = (data || []).map((team: any) => ({
         ...team,
         max_members: team.max_members || null,
-        member_count: memberCounts.get(team.id) || 0,
+        member_count: memberCounts.get(String(team.id)) || 0,
       }))
 
       return res.status(200).json({ teams: transformed })
