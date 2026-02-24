@@ -281,7 +281,7 @@ pre {
 }
 
 .rn-nav-btn:hover .rn-msg-symbol {
-  color: #64748b;
+  color: #2563eb;
 }
 
 .rn-nav-btn.is-active .rn-msg-symbol {
@@ -1483,10 +1483,10 @@ pre {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background-color: #eaf3ef;
+  background-color: #eff5ff;
   background-image:
-    radial-gradient(rgba(17, 24, 39, 0.03) 1px, transparent 1px),
-    radial-gradient(rgba(17, 24, 39, 0.03) 1px, transparent 1px);
+    radial-gradient(rgba(37, 99, 235, 0.045) 1px, transparent 1px),
+    radial-gradient(rgba(37, 99, 235, 0.045) 1px, transparent 1px);
   background-position: 0 0, 12px 12px;
   background-size: 24px 24px;
 }
@@ -1508,8 +1508,8 @@ pre {
 
 .rn-wa-bubble.is-own {
   align-self: flex-end;
-  background: #d9fdd3;
-  border-color: #c7efc2;
+  background: #e9f1ff;
+  border-color: #d4e3ff;
   border-radius: 12px 12px 3px 12px;
 }
 
