@@ -111,12 +111,49 @@ export default function TeamDetailPage() {
         if (membersError) {
           console.error('Members fetch error:', membersError)
         } else {
-          setMembers(membersData || [])
-          
-          // Check if current user is a member
+          let acceptedMembers = (membersData || []) as TeamMember[]
+
+          // Auto-heal: ensure team creator always has an accepted membership row.
+          if (
+            teamData?.created_by === session.user.id &&
+            !acceptedMembers.some((member) => member.user_id === session.user.id)
+          ) {
+            const { error: ensureMemberError } = await (supabase as any)
+              .from('team_members')
+              .insert({
+                team_id: teamId,
+                user_id: session.user.id,
+                status: 'accepted',
+                invited_by: session.user.id,
+              })
+
+            if (ensureMemberError && ensureMemberError.code !== '23505') {
+              console.error('Ensure creator membership error:', ensureMemberError)
+            } else {
+              const { data: refreshedMembers, error: refreshMembersError } = await supabase
+                .from('team_members')
+                .select(`
+                  *,
+                  profiles!team_members_user_id_fkey (
+                    id,
+                    name,
+                    avatar_url,
+                    email
+                  )
+                `)
+                .eq('team_id', teamId)
+                .eq('status', 'accepted')
+
+              if (!refreshMembersError && refreshedMembers) {
+                acceptedMembers = refreshedMembers as TeamMember[]
+              }
+            }
+          }
+
+          setMembers(acceptedMembers)
           const isUserMember =
             teamData?.created_by === session.user.id ||
-            membersData?.some(m => m.user_id === session.user.id)
+            acceptedMembers.some((member) => member.user_id === session.user.id)
           setIsMember(isUserMember)
         }
 
