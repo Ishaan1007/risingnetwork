@@ -37,8 +37,11 @@ export default function ExploreFreelancers() {
   const [page, setPage] = useState(0)
   const [totalCount, setTotalCount] = useState(0)
   const [session, setSession] = useState<any>(null)
+  const [authReady, setAuthReady] = useState(false)
   const [showSignupModal, setShowSignupModal] = useState(false)
   const [connectedIds, setConnectedIds] = useState<Set<string>>(new Set())
+  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set())
+  const [connectingId, setConnectingId] = useState<string | null>(null)
 
   // Filters
   const [selectedUniversityId, setSelectedUniversityId] = useState<string>('')
@@ -49,24 +52,38 @@ export default function ExploreFreelancers() {
 
   // Fetch available cities and skills
   useEffect(() => {
+    let mounted = true
+
     const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      setSession(session)
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        if (!mounted) return
+        setSession(session)
+      } finally {
+        if (mounted) setAuthReady(true)
+      }
     }
-    getSession()
+    void getSession()
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, sess) => {
+      if (!mounted) return
       setSession(sess)
+      setAuthReady(true)
     })
 
-    return () => subscription?.unsubscribe()
+    return () => {
+      mounted = false
+      subscription?.unsubscribe()
+    }
   }, [])
 
   useEffect(() => {
+    if (!authReady) return
+
     if (session?.user) {
       setShowSignupModal(false)
       return
@@ -76,7 +93,7 @@ export default function ExploreFreelancers() {
 
     const dismissed = window.localStorage.getItem('rn_signup_dismissed') === '1'
     setShowSignupModal(!dismissed)
-  }, [session])
+  }, [session, authReady])
 
   useEffect(() => {
     if (!session?.user) {
@@ -94,12 +111,19 @@ export default function ExploreFreelancers() {
 
       if (!active) return
       const ids = new Set<string>()
+      const pending = new Set<string>()
       ;(connectionRows || []).forEach((c: any) => {
         const other =
           c.requester_id === session.user.id ? c.recipient_id : c.requester_id
-        if (other) ids.add(other)
+        if (!other) return
+        if (c.status === 'accepted') {
+          ids.add(other)
+        } else if (c.status === 'pending' && c.requester_id === session.user.id) {
+          pending.add(other)
+        }
       })
       setConnectedIds(ids)
+      setPendingIds(pending)
     }
 
     loadConnections()
@@ -211,9 +235,43 @@ export default function ExploreFreelancers() {
     }
   }
 
+  const handleConnect = async (recipientId: string) => {
+    if (!session?.user?.id) {
+      alert('Please log in to connect.')
+      return
+    }
+    if (recipientId === session.user.id) return
+    if (connectedIds.has(recipientId) || pendingIds.has(recipientId)) return
+
+    setConnectingId(recipientId)
+    try {
+      const response = await fetch('/api/connections/request', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          requesterId: session.user.id,
+          recipientId,
+        }),
+      })
+      const result = await response.json().catch(() => null)
+      if (!response.ok) {
+        throw new Error(result?.error || 'Failed to send connection request')
+      }
+      setPendingIds((prev) => new Set(prev).add(recipientId))
+    } catch (error: any) {
+      console.error('Connection request failed:', error)
+      alert('Failed to send request. Please check your network and try again.')
+    } finally {
+      setConnectingId(null)
+    }
+  }
+
   return (
     <main className="rn-shell">
-      {!session && showSignupModal && (
+      {authReady && !session && showSignupModal && (
         <div className="rn-modal-backdrop" role="dialog" aria-modal="true">
           <div className="rn-modal">
             <button className="rn-modal-close" type="button" onClick={handleSignupDismiss} aria-label="Close">
@@ -332,7 +390,7 @@ export default function ExploreFreelancers() {
             )}
           </header>
 
-          {!session && !showSignupModal && (
+          {authReady && !session && !showSignupModal && (
             <div className="rn-login-card">
               <div>
                 <h3>Sign up to explore people</h3>
@@ -383,7 +441,16 @@ export default function ExploreFreelancers() {
             <>
               <div className={`rn-cards ${!session ? 'is-locked' : ''}`}>
                 {freelancers.map((freelancer) => (
-                  <article key={freelancer.id} className="rn-card">
+                  <article
+                    key={freelancer.id}
+                    className="rn-card is-clickable"
+                  >
+                    <button
+                      type="button"
+                      className="rn-card-hitbox"
+                      aria-label={`Open ${freelancer.name || 'profile'}`}
+                      onClick={() => router.push(`/profiles/${freelancer.id}`)}
+                    />
                     <div className="rn-card-head">
                       <Avatar src={freelancer.avatar_url} alt="avatar" size={56} />
                       <div>
@@ -412,31 +479,43 @@ export default function ExploreFreelancers() {
 
                     <div className="rn-card-actions rn-card-actions-split">
                       {session?.user?.id === freelancer.id ? (
-                        <button className="rn-secondary-btn" type="button" disabled>
+                        <button className="rn-secondary-btn" type="button" disabled onClick={(e) => e.stopPropagation()}>
                           You
                         </button>
                       ) : connectedIds.has(freelancer.id) ? (
                         <button
                           className="rn-secondary-btn"
                           type="button"
-                          onClick={() => router.push(`/profiles/${freelancer.id}`)}
+                          disabled
+                          onClick={(e) => e.stopPropagation()}
                         >
                           Connected
+                        </button>
+                      ) : pendingIds.has(freelancer.id) ? (
+                        <button className="rn-secondary-btn" type="button" disabled onClick={(e) => e.stopPropagation()}>
+                          Request Sent
                         </button>
                       ) : (
                       <button
                         className="rn-connect-btn"
                         type="button"
-                        onClick={() => router.push(`/profiles/${freelancer.id}`)}
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleConnect(freelancer.id)
+                        }}
+                        disabled={connectingId === freelancer.id}
                       >
-                        Connect
+                        {connectingId === freelancer.id ? 'Sending...' : 'Connect'}
                       </button>
                       )}
                       {freelancer.email && (
                         <button
                           className="rn-secondary-btn"
                           type="button"
-                          onClick={() => window.open(`mailto:${freelancer.email}`)}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            window.open(`mailto:${freelancer.email}`)
+                          }}
                         >
                           Contact
                         </button>

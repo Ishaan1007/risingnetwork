@@ -17,45 +17,66 @@ type LayoutProps = {
 export default function Layout({ children }: LayoutProps) {
   const router = useRouter()
   const [session, setSession] = useState<any>(null)
+  const [authReady, setAuthReady] = useState(false)
   const [searchInput, setSearchInput] = useState('')
   const [profileIncomplete, setProfileIncomplete] = useState(false)
 
   useEffect(() => {
-    const getSession = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession()
-      setSession(session)
+    let mounted = true
 
-      if (session?.user) {
-        fetch('/api/profiles/ensure', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }).catch((error) => console.warn('Failed to ensure profile:', error))
+    const ensureProfile = async (accessToken: string) => {
+      let attempt = 0
+      while (attempt < 3) {
+        try {
+          await fetch('/api/profiles/ensure', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+          return
+        } catch (_error) {
+          attempt += 1
+          if (attempt >= 3) return
+          await new Promise((resolve) => setTimeout(resolve, 400 * attempt))
+        }
       }
     }
 
-    getSession()
+    const getSession = async () => {
+      try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        if (!mounted) return
+        setSession(session)
+
+        if (session?.user) {
+          void ensureProfile(session.access_token)
+        }
+      } finally {
+        if (mounted) setAuthReady(true)
+      }
+    }
+
+    void getSession()
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, sess) => {
+      if (!mounted) return
       setSession(sess)
+      setAuthReady(true)
       if (sess?.user) {
-        fetch('/api/profiles/ensure', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${sess.access_token}`,
-          },
-        }).catch((error) => console.warn('Failed to ensure profile:', error))
+        void ensureProfile(sess.access_token)
       }
     })
 
-    return () => subscription?.unsubscribe()
+    return () => {
+      mounted = false
+      subscription?.unsubscribe()
+    }
   }, [])
 
   useEffect(() => {
@@ -181,7 +202,11 @@ export default function Layout({ children }: LayoutProps) {
             <SearchIcon size={20} />
             <span>Explore</span>
           </button>
-          {!session ? (
+          {!authReady ? (
+            <button className="rn-nav-btn" type="button" disabled>
+              <span>Checking session...</span>
+            </button>
+          ) : !session ? (
             <>
               <button
                 className="rn-nav-btn is-locked"

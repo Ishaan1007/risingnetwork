@@ -12,13 +12,53 @@ export default function AuthCallback() {
   const [displayName, setDisplayName] = useState('')
 
   useEffect(() => {
+    let mounted = true
+
+    const getSessionWithRetry = async () => {
+      let attempts = 0
+      while (attempts < 6) {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession()
+        if (session?.user) return session
+
+        attempts += 1
+        await new Promise((resolve) => setTimeout(resolve, 500))
+      }
+      return null
+    }
+
+    const ensureProfileWithRetry = async (accessToken: string) => {
+      let attempt = 0
+      while (attempt < 3) {
+        try {
+          const response = await fetch('/api/profiles/ensure', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+          })
+
+          if (response.ok) return
+        } catch (_error) {
+          // Retry below for temporary network issues.
+        }
+
+        attempt += 1
+        if (attempt < 3) {
+          await new Promise((resolve) => setTimeout(resolve, 500 * attempt))
+        }
+      }
+    }
+
     const handleCallback = async () => {
       try {
-        // Get current user session
-        const { data: { session } } = await supabase.auth.getSession()
+        const session = await getSessionWithRetry()
         
         if (session?.user) {
-          setUser(session.user)
+          if (mounted) setUser(session.user)
+          await ensureProfileWithRetry(session.access_token)
           
           // Sync profile picture from Google/Gravatar
           const profilePicture = syncProfilePicture(session.user)
@@ -84,6 +124,7 @@ export default function AuthCallback() {
           const displayName = googleName || existingProfile?.name || 'User'
           
           // Set state for rendering
+          if (!mounted) return
           setHasCompleteName(hasCompleteName)
           setDisplayName(displayName)
           
@@ -102,11 +143,15 @@ export default function AuthCallback() {
         console.error('Auth callback error:', error)
         router.push('/')
       } finally {
-        setLoading(false)
+        if (mounted) setLoading(false)
       }
     }
 
-    handleCallback()
+    void handleCallback()
+
+    return () => {
+      mounted = false
+    }
   }, [router])
 
   if (loading) {

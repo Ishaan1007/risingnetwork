@@ -805,6 +805,36 @@ pre {
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
+.rn-card.is-clickable {
+  position: relative;
+}
+
+.rn-card-hitbox {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.rn-card-hitbox:hover {
+  background: transparent;
+}
+
+.rn-card-head,
+.rn-card-meta {
+  position: relative;
+  z-index: 1;
+}
+
+.rn-card-actions {
+  position: relative;
+  z-index: 3;
+}
+
 .rn-card:hover {
   box-shadow: 0 22px 40px rgba(15, 23, 42, 0.12);
   transform: translateY(-2px);
