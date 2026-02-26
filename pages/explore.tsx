@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
+import { signInWithGoogle } from '../lib/auth'
 import Avatar from '../components/Avatar'
 import { ChevronLeftIcon, ChevronRightIcon, UserPlusIcon, XIcon } from '../components/Icons'
 import Skeleton from '../components/Skeleton'
@@ -224,7 +225,7 @@ export default function ExploreFreelancers() {
   const totalPages = Math.ceil(totalCount / LIMIT)
 
   const handleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' })
+    const { error } = await signInWithGoogle(supabase)
     if (error) console.error('OAuth error', error)
   }
 

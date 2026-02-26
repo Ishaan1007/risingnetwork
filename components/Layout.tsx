@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
+import { signInWithGoogle } from '../lib/auth'
 import {
   LogInIcon,
   LogOutIcon,
@@ -141,7 +142,7 @@ export default function Layout({ children }: LayoutProps) {
   }
 
   const handleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' })
+    const { error } = await signInWithGoogle(supabase)
     if (error) console.error('OAuth error', error)
   }
 
