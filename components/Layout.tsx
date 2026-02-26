@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useState } from 'react'
 import { useRouter } from 'next/router'
 import { supabase } from '../lib/supabaseClient'
-import { signInWithGoogle } from '../lib/auth'
+import { getInitialSession, signInWithGoogle } from '../lib/auth'
 import {
   LogInIcon,
   LogOutIcon,
@@ -47,10 +47,15 @@ export default function Layout({ children }: LayoutProps) {
 
     const getSession = async () => {
       try {
-        const {
-          data: { session },
-        } = await supabase.auth.getSession()
+        const { session, timedOut, error } = await getInitialSession(supabase)
         if (!mounted) return
+
+        if (timedOut) {
+          console.warn('Initial auth session check timed out; continuing without blocking UI.')
+        } else if (error) {
+          console.error('Initial auth session check failed:', error)
+        }
+
         setSession(session)
 
         if (session?.user) {
